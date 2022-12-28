@@ -1,5 +1,6 @@
-import cv2
 import itertools
+
+import cv2
 
 from .core import PuzzlePiece
 
