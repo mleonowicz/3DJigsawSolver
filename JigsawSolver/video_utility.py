@@ -2,7 +2,7 @@ import itertools
 
 import cv2
 
-from .core import PuzzlePiece
+from JigsawSolver.core import PuzzlePiece
 
 
 def create_puzzle(video_path, piece_width, piece_height, piece_length):
