@@ -21,30 +21,80 @@ def calculate_dissimilarity(piece_a: PuzzlePiece, piece_b: PuzzlePiece, orientat
     Parameters
     ----------
     piece_a : PuzzlePiece
-        First puzzle to compare
+        First puzzle to compare.
     piece_b : PuzzlePiece
-        Second puzzle to compare
+        Second puzzle to compare.
     orientation : str
         Orientation of the puzzles. There are three valid arguments:
         * 'LR' = Left - Right
-        * 'UP' = Up - Down
+        * 'UD' = Up - Down
         * 'BF' = Back - Forward
     """
 
-    assert orientation in ['LR', 'UP', 'BF']
-    piece_a = piece_a.piece
-    piece_b = piece_b.piece
+    assert orientation in ['LR', 'UD', 'BF']
+    piece_a = piece_a.piece.astype('int64')
+    piece_b = piece_b.piece.astype('int64')
 
     height, width, depth, _ = piece_a.shape
     if orientation == 'LR':
-        color_difference = piece_a[:, width - 1, :, :] - piece_b[:, 0, :, :]
-    if orientation == 'UP':
-        color_difference = piece_a[height - 1, :, :, :] - piece_b[0, :, :, :]
+        color_difference = (piece_a[:, width - 1, :, :] - piece_b[:, 0, :, :]).astype('int64')
+    if orientation == 'UD':
+        color_difference = (piece_a[height - 1, :, :, :] - piece_b[0, :, :, :]).astype('int64')
     if orientation == 'BF':
-        color_difference = piece_a[:, :, depth - 1, :] - piece_b[:, :, 0, :]
+        color_difference = (piece_a[:, :, depth - 1, :] - piece_b[:, :, 0, :]).astype('int64')
 
     color_difference = np.power(color_difference, 2)
     total_difference = np.sum(color_difference)
     dissimilarity = np.sqrt(total_difference)
 
     return dissimilarity
+
+
+frame_a = np.asarray(
+    [
+        [
+            [1, 1, 1],
+            [1, 1, 1]
+        ],
+        [
+            [1, 1, 1],
+            [1, 1, 1]
+        ],
+        [
+            [1, 1, 1],
+            [1, 1, 1]
+        ]
+    ]
+)
+
+frame_b = frame_a.copy()
+frame_b[0][0] = [0, 0, 0]
+frame_b[0][1] = [0, 0, 0]
+frame_b[1][1] = [0, 0, 0]
+
+# frame_a 3x2x1
+#
+# 1,1,1   1,1,1
+# 1,1,1   1,1,1
+# 1,1,1   1,1,1
+
+# frame_b 3x2x1
+#
+# 0,0,0   0,0,0
+# 1,1,1   0,0,0
+# 1,1,1   1,1,1
+
+piece_a = PuzzlePiece((0, 0, 0), (2, 3, 1))
+piece_a.add_frame(frame_a)
+
+piece_b = PuzzlePiece((0, 0, 0), (2, 3, 1))
+piece_b.add_frame(frame_b)
+
+assert calculate_dissimilarity(piece_a, piece_b, 'LR') == np.sqrt(3)
+assert calculate_dissimilarity(piece_b, piece_a, 'LR') == np.sqrt(6)
+
+assert calculate_dissimilarity(piece_a, piece_b, 'UD') == np.sqrt(6)
+assert calculate_dissimilarity(piece_b, piece_a, 'UD') == np.sqrt(0)
+
+assert calculate_dissimilarity(piece_b, piece_a, 'BF') == np.sqrt(9)
+assert calculate_dissimilarity(piece_b, piece_a, 'BF') == np.sqrt(9)
