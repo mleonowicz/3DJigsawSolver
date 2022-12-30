@@ -1,16 +1,15 @@
 import argparse
-import sys
-
 from JigsawSolver.video_utility import create_puzzle
 
 
-def main(argv):
+def main():
     parser = argparse.ArgumentParser(
         prog='3DJigsawSolver'
     )
     parser.add_argument(
-        'video_path',
-        type=str
+        '--video-path',
+        type=str,
+        default='example/example.mp4',
     )
 
     args = parser.parse_args()
@@ -18,4 +17,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
