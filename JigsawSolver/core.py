@@ -26,7 +26,7 @@ class IndexToDataMapping:
         self.width, self.height, self.depth = piece_size
         self.map = {}
         for xcoord, ycoord, zcoord in product(range(self.n_pieces_x), range(self.n_pieces_y), range(self.n_pieces_z)):
-            self.map[(xcoord, ycoord, zcoord)] = np.empty((self.height, self.width, self.depth, 3))
+            self.map[(xcoord, ycoord, zcoord)] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
 
     def add_frame(self, frame: np.ndarray, frame_count):
         """
@@ -60,7 +60,7 @@ class Puzzle:
     def __init__(self, mapping: IndexToDataMapping, puzzle_pieces=None):
         """
         Representation of a single solution to the puzzle
-        
+
         Parameters
         ----------
         mapping : IndexToDataMapping
@@ -69,7 +69,7 @@ class Puzzle:
             Order in which puzzles should be arranged in this particular solution. If None, pieces are randomly arranged
         """
         self.index_to_data = mapping
-        n_x, n_y, n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
+        self.n_x, self.n_y, self.n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
         if puzzle_pieces is not None:
             # I'm thinking this should be the way of creating the Puzzle instance when crossing two population members
             # Not sure how to represent the singular pieces for crossing to be comfortable, list of PuzzlePiece may be
@@ -77,10 +77,10 @@ class Puzzle:
             self.puzzle = puzzle_pieces
         else:
             # shuffling the pieces
-            position_indexes = list(product(range(n_x), range(n_y), range(n_z)))
+            position_indexes = list(product(range(self.n_x), range(self.n_y), range(self.n_z)))
             shuffle(position_indexes)
             self.puzzle = []
-            for index, position in zip(product(range(n_x), range(n_y), range(n_z)), position_indexes):
+            for index, position in zip(product(range(self.n_x), range(self.n_y), range(self.n_z)), position_indexes):
                 self.puzzle.append(PuzzlePiece(index, position))
 
     def fitness(self):
@@ -91,7 +91,4 @@ class Puzzle:
 
     @classmethod
     def cross(cls, parent1, parent2):
-        pass
-
-    def create_video(self):
         pass
