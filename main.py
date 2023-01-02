@@ -1,4 +1,5 @@
 import argparse
+
 from JigsawSolver.video_utility import create_puzzle
 
 
