@@ -2,31 +2,37 @@ import itertools
 
 import cv2
 
-from JigsawSolver.core import PuzzlePiece
+from JigsawSolver.core import IndexToDataMapping
 
 
-def create_puzzle(video_path, piece_width, piece_height, piece_length):
+def parse_video(video_path: str, piece_width: int, piece_height: int, piece_depth: int):
+    """
+    Function parsing input video and creating the IndexToDataMapping instance.
+
+    Parameters
+    ----------
+    video_path : str
+        Path to the input video
+    piece_width, piece_height, piece_depth
+        Size of the puzzle piece in each dimension (width, height being the x, y dimension for each frame, depth being
+        number of frames belonging to the piece)
+
+    Returns
+    -------
+    IndexToDataMapping
+        Mapping later used to create a population of puzzle solutions.
+    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open a {video_path} video")
-    puzzle = []
     n_pieces_x = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) / piece_width)
     n_pieces_y = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) / piece_height)
-    # TODO: Warning when frame_width/height/video_length % piece_width/height/length != 0
-    temp_pieces = [
-        PuzzlePiece((xcoord, ycoord, 0), (piece_width, piece_height, piece_length))
-        for xcoord, ycoord in itertools.product(range(n_pieces_x), range(n_pieces_y))
-    ]
+    n_pieces_z = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / piece_depth)
+    # TODO: Warning when frame_width/height/video_depth % piece_width/height/depth != 0
+    index_to_data = IndexToDataMapping((n_pieces_x, n_pieces_y, n_pieces_z), (piece_width, piece_height, piece_depth))
     for frame_ind in itertools.count(1):
         ret, frame = cap.read()
         if not ret:
             break
-        for temp_piece in temp_pieces:
-            temp_piece.add_frame(frame)
-        if frame_ind % piece_length == 0:
-            puzzle.extend(temp_pieces)
-            temp_pieces = [
-                PuzzlePiece((xcoord, ycoord, frame_ind // piece_length), (piece_width, piece_height, piece_length))
-                for xcoord, ycoord in itertools.product(range(n_pieces_x), range(n_pieces_y))
-            ]
-    return puzzle
+        index_to_data.add_frame(frame, frame_ind)
+    return index_to_data
