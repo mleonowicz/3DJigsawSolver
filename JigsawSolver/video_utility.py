@@ -30,7 +30,7 @@ def parse_video(video_path: str, piece_width: int, piece_height: int, piece_dept
     n_pieces_z = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / piece_depth)
     # TODO: Warning when frame_width/height/video_depth % piece_width/height/depth != 0
     index_to_data = IndexToDataMapping((n_pieces_x, n_pieces_y, n_pieces_z), (piece_width, piece_height, piece_depth))
-    for frame_ind in itertools.count(1):
+    for frame_ind in itertools.count():
         ret, frame = cap.read()
         if not ret:
             break

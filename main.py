@@ -1,6 +1,6 @@
 import argparse
 
-from JigsawSolver.video_utility import create_puzzle
+from JigsawSolver.video_utility import parse_video
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     )
 
     args = parser.parse_args()
-    puzzle = create_puzzle(args.video_path, 128, 72, 5)  # noqa: F841
+    puzzle = parse_video(args.video_path, 128, 72, 5)  # noqa: F841
 
 
 if __name__ == '__main__':

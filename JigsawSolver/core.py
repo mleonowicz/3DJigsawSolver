@@ -51,13 +51,47 @@ class IndexToDataMapping:
 
 
 class PuzzlePiece:
-    def __init__(self, coords, piece_size):
-        self.x_coord, self.y_coord, self.z_coord = coords
-        self.width, self.height, self.length = piece_size
-        self.piece = np.empty((self.height, self.width, self.length, 3), dtype=np.uint8)
-        self._frame_ind = 0
+    def __init__(self, piece_index, position):
+        self.index = piece_index
+        self.xcoord, self.ycoord, self.zcoord = position
 
-    def add_frame(self, frame):
-        self.piece[:, :, self._frame_ind] = frame[self.height * self.y_coord: self.height * (self.y_coord + 1),
-                                                  self.width * self.x_coord: self.width * (self.x_coord + 1)]
-        self._frame_ind += 1
+
+class Puzzle:
+    def __init__(self, mapping: IndexToDataMapping, puzzle_pieces=None):
+        """
+        Representation of a single solution to the puzzle
+        
+        Parameters
+        ----------
+        mapping : IndexToDataMapping
+            Mapping between the puzzle indexes and the video data corresponding to each piece
+        puzzle_pieces
+            Order in which puzzles should be arranged in this particular solution. If None, pieces are randomly arranged
+        """
+        self.index_to_data = mapping
+        n_x, n_y, n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
+        if puzzle_pieces is not None:
+            # I'm thinking this should be the way of creating the Puzzle instance when crossing two population members
+            # Not sure how to represent the singular pieces for crossing to be comfortable, list of PuzzlePiece may be
+            # awkward to cross.
+            self.puzzle = puzzle_pieces
+        else:
+            # shuffling the pieces
+            position_indexes = list(product(range(n_x), range(n_y), range(n_z)))
+            shuffle(position_indexes)
+            self.puzzle = []
+            for index, position in zip(product(range(n_x), range(n_y), range(n_z)), position_indexes):
+                self.puzzle.append(PuzzlePiece(index, position))
+
+    def fitness(self):
+        pass
+
+    def mutate(self):
+        pass
+
+    @classmethod
+    def cross(cls, parent1, parent2):
+        pass
+
+    def create_video(self):
+        pass
