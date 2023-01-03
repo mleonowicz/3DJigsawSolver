@@ -1,5 +1,4 @@
 from itertools import product
-from random import shuffle
 from typing import Tuple
 
 import numpy as np
@@ -21,12 +20,48 @@ class IndexToDataMapping:
         piece_size : Tuple[int, int, int]
             Sizes of the pieces in each dimension
         """
-
         self.n_pieces_x, self.n_pieces_y, self.n_pieces_z = n_pieces
+        self.num_of_puzzles = self.n_pieces_x * self.n_pieces_y * self.n_pieces_z
         self.width, self.height, self.depth = piece_size
-        self.map = {}
-        for xcoord, ycoord, zcoord in product(range(self.n_pieces_x), range(self.n_pieces_y), range(self.n_pieces_z)):
-            self.map[(xcoord, ycoord, zcoord)] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
+        self.id_map = {}
+        for index in range(self.num_of_puzzles):
+            self.id_map[index] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
+
+    def coords_to_index(self, coords: Tuple[int, int, int]) -> int:
+        """
+        Mapping that converts given coordinates into a index of a puzzle.
+
+        Parameters
+        ----------
+        coords : Tuple[int, int, int]
+            (x, y, z) coordinates of the puzzle in the original image
+
+        Returns
+        -------
+        int
+            Index of the puzzle in the `id_map`
+        """
+        xcoord, ycoord, zcoord = coords
+        return xcoord * self.n_pieces_y * self.n_pieces_z + ycoord * self.n_pieces_z + zcoord
+
+    def index_to_coords(self, index: int) -> Tuple[int, int, int]:
+        """
+        Mapping that converts given index into coordinates of a puzzle.
+
+        Parameters
+        ----------
+        index : int
+            Index of the puzzle in the `id_map`
+
+        Returns
+        -------
+        Tuple[int, int, int]
+            Coordinates of the puzzle of id `index` in the original image
+        """
+        zcoord = index % self.n_pieces_z
+        ycoord = (index // self.n_pieces_z) % self.n_pieces_y
+        xcoord = (index // (self.n_pieces_z * self.n_pieces_y)) % self.n_pieces_x
+        return (xcoord, ycoord, zcoord)
 
     def add_frame(self, frame: np.ndarray, frame_count):
         """
@@ -42,18 +77,13 @@ class IndexToDataMapping:
         """
         zcoord, data_z_ind = frame_count // self.depth, frame_count % self.depth
         for xcoord, ycoord in product(range(self.n_pieces_x), range(self.n_pieces_y)):
-            puzzle_data = self.map[(xcoord, ycoord, zcoord)]
+            index = self.coords_to_index((xcoord, ycoord, zcoord))
+            puzzle_data = self.id_map[index]
             puzzle_data[:, :, data_z_ind] = frame[self.height * ycoord: self.height * (ycoord + 1),
                                                   self.width * xcoord: self.width * (xcoord + 1)]
 
-    def __getitem__(self, key):
-        return self.map[key]
-
-
-class PuzzlePiece:
-    def __init__(self, piece_index, position):
-        self.index = piece_index
-        self.xcoord, self.ycoord, self.zcoord = position
+    def __getitem__(self, index):
+        return self.id_map[index]
 
 
 class Puzzle:
@@ -66,27 +96,19 @@ class Puzzle:
         mapping : IndexToDataMapping
             Mapping between the puzzle indexes and the video data corresponding to each piece
         puzzle_pieces
-            Order in which puzzles should be arranged in this particular solution. If None, pieces are randomly arranged
+            3D numpy array that with indices of puzzles
         """
         self.index_to_data = mapping
         self.n_x, self.n_y, self.n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
         if puzzle_pieces is not None:
-            # I'm thinking this should be the way of creating the Puzzle instance when crossing two population members
-            # Not sure how to represent the singular pieces for crossing to be comfortable, list of PuzzlePiece may be
-            # awkward to cross.
             self.puzzle = puzzle_pieces
         else:
             # shuffling the pieces
-            position_indexes = list(product(range(self.n_x), range(self.n_y), range(self.n_z)))
-            shuffle(position_indexes)
-            self.puzzle = []
-            for index, position in zip(product(range(self.n_x), range(self.n_y), range(self.n_z)), position_indexes):
-                self.puzzle.append(PuzzlePiece(index, position))
+            self.puzzle = np.arange(mapping.num_of_puzzles, dtype=np.int32)
+            np.random.shuffle(self.puzzle)
+            self.puzzle = np.reshape(self.puzzle, (self.n_x, self.n_y, self.n_z))
 
     def fitness(self):
-        pass
-
-    def mutate(self):
         pass
 
     @classmethod

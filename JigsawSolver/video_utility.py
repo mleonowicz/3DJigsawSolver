@@ -99,12 +99,13 @@ def save_puzzle_video(
     # Should test if memory allows for bigger videos
     output_video = np.empty((metadata.height, metadata.width, metadata.frame_count, 3), dtype=np.uint8)
 
-    for piece in puzzle.puzzle:
+    for coords, index in np.ndenumerate(puzzle.puzzle):
+        xcoord, ycoord, zcoord = coords
         output_video[
-            piece_height*piece.ycoord: piece_height*(piece.ycoord + 1),
-            piece_width*piece.xcoord: piece_width*(piece.xcoord + 1),
-            piece_depth*piece.zcoord: piece_depth*(piece.zcoord + 1)
-        ] = puzzle.index_to_data[piece.index]
+            piece_height*ycoord: piece_height*(ycoord + 1),
+            piece_width*xcoord: piece_width*(xcoord + 1),
+            piece_depth*zcoord: piece_depth*(zcoord + 1)
+        ] = puzzle.index_to_data[index]
     for frame_ind in range(metadata.frame_count):
         writer.write(output_video[:, :, frame_ind])
     writer.release()
