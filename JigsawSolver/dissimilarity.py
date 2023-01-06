@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def calculate_dissimilarity(piece_a: np.ndarray, piece_b: np.ndarray, orientation: str) -> int:
+def calculate_dissimilarity(piece_a: np.ndarray, piece_b: np.ndarray, orientation: str) -> float:
     """
     Calculates dissimilarity betweeen two puzzles given an orientation.
 
@@ -15,10 +15,15 @@ def calculate_dissimilarity(piece_a: np.ndarray, piece_b: np.ndarray, orientatio
         Orientation of the puzzles. There are three valid arguments:
         * 'LR' = Left - Right
         * 'UD' = Up - Down
-        * 'BF' = Back - Forward
+        * 'FB' = Forward - Back
+
+    Returns
+    -------
+    float
+        Calculated dissimilarity
     """
 
-    assert orientation in ['LR', 'UD', 'BF']
+    assert orientation in ['LR', 'UD', 'FB']
     piece_a = piece_a.astype('int64')
     piece_b = piece_b.astype('int64')
 
@@ -27,7 +32,7 @@ def calculate_dissimilarity(piece_a: np.ndarray, piece_b: np.ndarray, orientatio
         color_difference = (piece_a[:, width - 1, :, :] - piece_b[:, 0, :, :]).astype('int64')
     if orientation == 'UD':
         color_difference = (piece_a[height - 1, :, :, :] - piece_b[0, :, :, :]).astype('int64')
-    if orientation == 'BF':
+    if orientation == 'FB':
         color_difference = (piece_a[:, :, depth - 1, :] - piece_b[:, :, 0, :]).astype('int64')
 
     color_difference = np.power(color_difference, 2)

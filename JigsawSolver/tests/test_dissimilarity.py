@@ -51,5 +51,5 @@ def test_dissimilarity_function(pieces):
     assert calculate_dissimilarity(piece_a, piece_b, 'UD') == np.sqrt(6)
     assert calculate_dissimilarity(piece_b, piece_a, 'UD') == np.sqrt(0)
 
-    assert calculate_dissimilarity(piece_b, piece_a, 'BF') == np.sqrt(9)
-    assert calculate_dissimilarity(piece_b, piece_a, 'BF') == np.sqrt(9)
+    assert calculate_dissimilarity(piece_b, piece_a, 'FB') == np.sqrt(9)
+    assert calculate_dissimilarity(piece_b, piece_a, 'FB') == np.sqrt(9)

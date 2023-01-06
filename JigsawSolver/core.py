@@ -3,6 +3,8 @@ from typing import Tuple
 
 import numpy as np
 
+from JigsawSolver.dissimilarity import calculate_dissimilarity
+
 
 class IndexToDataMapping:
     def __init__(self,
@@ -24,6 +26,7 @@ class IndexToDataMapping:
         self.num_of_puzzles = self.n_pieces_x * self.n_pieces_y * self.n_pieces_z
         self.width, self.height, self.depth = piece_size
         self.id_map = {}
+        self.dissimilarity_cache = {}
         for index in range(self.num_of_puzzles):
             self.id_map[index] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
 
@@ -85,6 +88,36 @@ class IndexToDataMapping:
     def __getitem__(self, index):
         return self.id_map[index]
 
+    def get_dissimilarity(self, index_a: int, index_b: int, orientation: str) -> float:
+        """
+        Calculates dissimilarity betweeen puzzles of `index_a` and `index_b` ids given an orientation.
+        This function caches the calculated values.
+
+        Parameters
+        ----------
+        index_a : int
+            Index of the first puzzle to compare.
+        piece_b : int
+            Index of the second puzzle to compare.
+        orientation : str
+            Orientation of the puzzles. There are three valid arguments:
+            * 'LR' = Left - Right
+            * 'UD' = Up - Down
+            * 'FB' = Forward - Back
+
+        Returns
+        -------
+        float
+            Calculated dissimilarity
+        """
+        key = (index_a, index_b, orientation)
+        try:
+            return self.dissimilarity_cache[key]
+        except KeyError:
+            dissimilarity = calculate_dissimilarity(self[index_a], self[index_b], orientation)
+            self.dissimilarity_cache[key] = dissimilarity
+            return dissimilarity
+
 
 class Puzzle:
     def __init__(self, mapping: IndexToDataMapping, puzzle_pieces=None):
@@ -98,6 +131,7 @@ class Puzzle:
         puzzle_pieces
             3D numpy array that with indices of puzzles
         """
+        self._fitness = None
         self.index_to_data = mapping
         self.n_x, self.n_y, self.n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
         if puzzle_pieces is not None:
@@ -108,8 +142,34 @@ class Puzzle:
             np.random.shuffle(self.puzzle)
             self.puzzle = np.reshape(self.puzzle, (self.n_x, self.n_y, self.n_z))
 
+    @property
     def fitness(self):
-        pass
+        if self._fitness:
+            return self._fitness
+
+        self._fitness = 0
+        for i in range(self.n_x - 1):
+            for j in range(self.n_y):
+                for k in range(self.n_z):
+                    index_a = self.puzzle[i][j][k]
+                    index_b = self.puzzle[i + 1][j][k]
+                    self._fitness += self.index_to_data.get_dissimilarity(index_a, index_b, 'LR')
+
+        for i in range(self.n_x):
+            for j in range(self.n_y - 1):
+                for k in range(self.n_z):
+                    index_a = self.puzzle[i][j][k]
+                    index_b = self.puzzle[i][j + 1][k]
+                    self._fitness += self.index_to_data.get_dissimilarity(index_a, index_b, 'UD')
+
+        for i in range(self.n_x):
+            for j in range(self.n_y):
+                for k in range(self.n_z - 1):
+                    index_a = self.puzzle[i][j][k]
+                    index_b = self.puzzle[i][j][k + 1]
+                    self._fitness += self.index_to_data.get_dissimilarity(index_a, index_b, 'FB')
+
+        return self._fitness
 
     @classmethod
     def cross(cls, parent1, parent2):
