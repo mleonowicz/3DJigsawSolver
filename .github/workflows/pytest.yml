@@ -1,0 +1,19 @@
+name: pytest
+
+on: [push]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Install requirements.txt
+      run: pip install -r requirements.txt
+    - name: Install pytest
+      run: pip install pytest
+    - name: Test
+      run: pytest .
