@@ -178,5 +178,5 @@ class Puzzle:
         return self._fitness
 
     @classmethod
-    def cross(cls, parent1, parent2):
+    def cross(cls, first_parent, second_parent):
         pass
