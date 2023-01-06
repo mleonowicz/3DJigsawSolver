@@ -11,9 +11,7 @@ class IndexToDataMapping:
                  n_pieces: Tuple[int, int, int],
                  piece_size: Tuple[int, int, int]):
         """
-        Mapping between the index of the piece and the video data. Key is the triple of integers that indicate the
-        position of the puzzle piece in the original video, the value is the numpy array of the [x, y, z, 3] dimension,
-        [x, y] being the slice of each frame, the z dimension being the frame that belong to the puzzle piece.
+        Mapping between the index of the piece and the video data.
 
         Parameters
         ----------
@@ -120,7 +118,7 @@ class IndexToDataMapping:
 
 
 class Puzzle:
-    def __init__(self, mapping: IndexToDataMapping, puzzle_pieces=None):
+    def __init__(self, mapping: IndexToDataMapping, puzzle_pieces: np.ndarray = None):
         """
         Representation of a single solution to the puzzle
 
@@ -128,7 +126,7 @@ class Puzzle:
         ----------
         mapping : IndexToDataMapping
             Mapping between the puzzle indexes and the video data corresponding to each piece
-        puzzle_pieces
+        puzzle_pieces : np.ndarray
             3D numpy array that with indices of puzzles
         """
         self._fitness = None
@@ -143,7 +141,15 @@ class Puzzle:
             self.puzzle = np.reshape(self.puzzle, (self.n_x, self.n_y, self.n_z))
 
     @property
-    def fitness(self):
+    def fitness(self) -> float:
+        """
+        Fitness value getter that is calculated by summing dissimilarity between all adjecent pieces.
+
+        Returns
+        -------
+        float
+            Fitness value
+        """
         if self._fitness:
             return self._fitness
 
