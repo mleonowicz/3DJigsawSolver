@@ -1,17 +1,15 @@
 import numpy as np
 
-from JigsawSolver.core import PuzzlePiece
 
-
-def calculate_dissimilarity(piece_a: PuzzlePiece, piece_b: PuzzlePiece, orientation: str) -> int:
+def calculate_dissimilarity(piece_a: np.ndarray, piece_b: np.ndarray, orientation: str) -> int:
     """
     Calculates dissimilarity betweeen two puzzles given an orientation.
 
     Parameters
     ----------
-    piece_a : PuzzlePiece
+    piece_a : np.ndarray
         First puzzle to compare.
-    piece_b : PuzzlePiece
+    piece_b : np.ndarray
         Second puzzle to compare.
     orientation : str
         Orientation of the puzzles. There are three valid arguments:
@@ -21,8 +19,8 @@ def calculate_dissimilarity(piece_a: PuzzlePiece, piece_b: PuzzlePiece, orientat
     """
 
     assert orientation in ['LR', 'UD', 'BF']
-    piece_a = piece_a.piece.astype('int64')
-    piece_b = piece_b.piece.astype('int64')
+    piece_a = piece_a.astype('int64')
+    piece_b = piece_b.astype('int64')
 
     height, width, depth, _ = piece_a.shape
     if orientation == 'LR':

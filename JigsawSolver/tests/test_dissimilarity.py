@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from JigsawSolver.core import PuzzlePiece
 from JigsawSolver.dissimilarity import calculate_dissimilarity
 
 
@@ -22,16 +21,16 @@ def pieces():
     frame_a = np.asarray(
         [
             [
-                [1, 1, 1],
-                [1, 1, 1]
+                [[1, 1, 1]],
+                [[1, 1, 1]]
             ],
             [
-                [1, 1, 1],
-                [1, 1, 1]
+                [[1, 1, 1]],
+                [[1, 1, 1]]
             ],
             [
-                [1, 1, 1],
-                [1, 1, 1]
+                [[1, 1, 1]],
+                [[1, 1, 1]]
             ]
         ]
     )
@@ -41,12 +40,7 @@ def pieces():
     frame_b[0][1] = [0, 0, 0]
     frame_b[1][1] = [0, 0, 0]
 
-    piece_a = PuzzlePiece((0, 0, 0), (2, 3, 1))
-    piece_a.add_frame(frame_a)
-
-    piece_b = PuzzlePiece((0, 0, 0), (2, 3, 1))
-    piece_b.add_frame(frame_b)
-    return piece_a, piece_b
+    return frame_a, frame_b
 
 
 def test_dissimilarity_function(pieces):

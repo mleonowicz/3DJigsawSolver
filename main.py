@@ -1,6 +1,7 @@
 import argparse
 
-from JigsawSolver.video_utility import create_puzzle
+from JigsawSolver.core import Puzzle
+from JigsawSolver.video_utility import parse_video, save_puzzle_video
 
 
 def main():
@@ -14,7 +15,13 @@ def main():
     )
 
     args = parser.parse_args()
-    puzzle = create_puzzle(args.video_path, 128, 72, 5)  # noqa: F841
+    index_mapping, metadata = parse_video(args.video_path, 128, 72, 5)  # noqa: F841
+    save_puzzle_video(
+        "build/result.avi",
+        Puzzle(index_mapping),
+        metadata,
+        128, 72, 5
+    )
 
 
 if __name__ == '__main__':
