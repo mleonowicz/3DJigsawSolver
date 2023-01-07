@@ -3,7 +3,8 @@ import logging
 import numpy as np
 from tqdm import trange
 
-from JigsawSolver.core import IndexToDataMapping, Puzzle
+from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
+from JigsawSolver.video_utility import parse_video
 
 
 class GeneticAlgorithm(object):
@@ -52,9 +53,10 @@ class GeneticAlgorithm(object):
 
             new_population = []
             for indices in parent_indices:
-                first_parent = indices[0]
-                second_parent = indices[1]
-                new_puzzle = Puzzle.cross(first_parent, second_parent)
+                first_parent = current_population[indices[0]]
+                second_parent = current_population[indices[1]]
+                cross_operator = CrossOperator(first_parent, second_parent)
+                new_puzzle = cross_operator()
                 new_population.append(new_puzzle)
 
             new_population_fitness_values = np.array([
@@ -68,3 +70,7 @@ class GeneticAlgorithm(object):
 
             current_population = new_population
             current_population_fitness_values = new_population_fitness_values
+
+index_mapping, metadata = parse_video("example/example.mp4", 128, 72, 85)
+ga = GeneticAlgorithm(index_mapping, 10)
+ga.fit(5)

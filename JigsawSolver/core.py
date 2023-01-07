@@ -1,5 +1,6 @@
 from itertools import product
-from typing import Tuple
+from typing import Tuple, Optional, List
+import heapq
 
 import numpy as np
 
@@ -117,7 +118,7 @@ class IndexToDataMapping:
             self.dissimilarity_cache[key] = dissimilarity
             return dissimilarity
 
-    def gest_best_fit(self, index: int, orientation: str) -> int:
+    def get_best_fit(self, index: int, orientation: str) -> List[int]:
         """
         Parameters
         ----------
@@ -135,8 +136,7 @@ class IndexToDataMapping:
         try:
             return self.best_fit_cache[key]
         except KeyError:
-            argmin = 0
-            min = float('inf')
+            self.best_fit_cache[key] = []
             for other_index in range(self.num_of_puzzles):
                 if other_index == index:
                     continue
@@ -154,11 +154,9 @@ class IndexToDataMapping:
                 elif orientation == 'F':
                     dissimilarity = self.get_dissimilarity(other_index, index, 'FB')
 
-                if dissimilarity < min:
-                    min = dissimilarity
-                    argmin = other_index
-            
-            self.best_fit_cache[key] = argmin
+                self.best_fit_cache[key].append(dissimilarity)
+
+            sorted(self.best_fit_cache[key])
             return self.best_fit_cache[key]
 
 
@@ -174,6 +172,7 @@ class Puzzle:
         puzzle_pieces : np.ndarray
             3D numpy array that with indices of puzzles
         """
+        self.index_to_coord = {}
         self._fitness = None
         self.index_to_data = mapping
         self.n_x, self.n_y, self.n_z = mapping.n_pieces_x, mapping.n_pieces_y, mapping.n_pieces_z
@@ -184,6 +183,9 @@ class Puzzle:
             self.puzzle = np.arange(mapping.num_of_puzzles, dtype=np.int32)
             np.random.shuffle(self.puzzle)
             self.puzzle = np.reshape(self.puzzle, (self.n_x, self.n_y, self.n_z))
+
+        for (x, y, z), index in np.ndenumerate(self.puzzle):
+            self.index_to_coord[index] = (x, y, z)
 
     @property
     def fitness(self) -> float:
@@ -222,6 +224,173 @@ class Puzzle:
 
         return self._fitness
 
-    @classmethod
-    def cross(cls, first_parent, second_parent):
-        pass
+    def get_adjecent_piece(self, piece_id: int, orientation: str) -> Optional[int]:
+        try:
+            x, y, z = self.index_to_coord[piece_id]
+            if orientation == 'R':
+                return self.puzzle[x + 1, y, z]
+            if orientation == 'L':
+                return self.puzzle[x - 1, y, z]
+            if orientation == 'U':
+                return self.puzzle[x, y - 1, z]
+            if orientation == 'D':
+                return self.puzzle[x, y + 1, z]
+            if orientation == 'F':
+                return self.puzzle[x, y, z + 1]
+            if orientation == 'B':
+                return self.puzzle[x, y, z - 1]
+        except IndexError:
+            return None
+
+
+class CrossOperator(object):
+    def __init__(self, first_parent: Puzzle, second_parent: Puzzle, mutation_probability=0.05):
+        self.first_parent = first_parent
+        self.second_parent = second_parent
+        self.mutation_probability = mutation_probability
+
+        self.mapping = first_parent.index_to_data
+        self.num_of_puzzles = first_parent.index_to_data.num_of_puzzles
+
+        self.width = first_parent.n_x
+        self.height = first_parent.n_y
+        self.depth = first_parent.n_z
+
+        self.left_b = 0
+        self.right_b = 0
+        self.up_b = 0
+        self.down_b = 0
+        self.forward_b = 0
+        self.back_b = 0
+
+        self.kernel = {}
+        self.piece_candidates = []
+
+    def __call__(self):
+        start_piece_id = np.random.choice(self.num_of_puzzles, 1)
+        start_piece_position = (0, 0, 0)
+
+        self.available_pieces = set(range(self.num_of_puzzles))
+        self.add_to_kernel(start_piece_id, start_piece_position)
+
+        while self.kernel.len() != self.num_of_puzzles:
+            _, (index, new_position, old_index, orientation) = heapq.heappop(self.piece_candidates)
+
+            if new_position in self.kernel:
+                continue
+            if index not in self.available_pieces:
+                priority, new_piece_index = self.get_new_piece_index(old_index, orientation)
+                if np.random.uniform() < self.mutation_probability:
+                    new_piece_index = np.random.choice(self.available_pieces)
+
+                heapq.heappush(
+                    self.piece_candidates,
+                    (priority, (new_piece_index, new_position, old_index, orientation))
+                )
+                continue
+
+            self.add_to_kernel(index, new_position)
+
+        return self.procreate()
+
+    def add_to_kernel(self, current_piece_index: int, curr_piece_position: Tuple[int, int, int]):
+        curr_x, curr_y, curr_z = curr_piece_position
+        self.kernel[curr_piece_position] = current_piece_index
+        self.available_pieces -= set(current_piece_index)
+        self.left_b =    min(self.left_b,    curr_x)  # noqa: E222
+        self.right_b =   max(self.right_b,   curr_x)  # noqa: E222
+        self.up_b =      min(self.up_b,      curr_y)  # noqa: E222
+        self.down_b =    max(self.down_b,    curr_y)  # noqa: E222
+        self.back_b =    min(self.back_b,    curr_z)  # noqa: E222
+        self.forward_b = max(self.forward_b, curr_z)  # noqa: E222
+
+        adjecent_positions = {
+            'R': (curr_x + 1, curr_y, curr_z),
+            'L': (curr_x - 1, curr_y, curr_z),
+            'D': (curr_x, curr_y + 1, curr_z),
+            'U': (curr_x, curr_y - 1, curr_z),
+            'F': (curr_x, curr_y, curr_z + 1),
+            'B': (curr_x, curr_y, curr_z - 1)
+        }
+
+        for orientation in ['R', 'L', 'D', 'U', 'B', 'F']:
+            new_position = adjecent_positions[orientation]
+            if new_position in self.kernel:
+                continue
+
+            if not self.is_in_boundary(new_position):
+                continue
+
+            priority, new_piece_index = self.get_new_piece_index(current_piece_index, orientation)
+
+            if np.random.uniform() < self.mutation_probability:
+                new_piece_index = np.random.choice(self.available_pieces)
+
+            heapq.heappush(
+                self.piece_candidates,
+                (priority, (new_piece_index, new_position, current_piece_index, orientation))
+            )
+
+    def get_new_piece_index(self, current_piece_index: int, orientation: str) -> Tuple[int, int]:
+        # Same piece in both parents
+        first_parent_adjecent_index = self.first_parent.get_adjecent_piece(current_piece_index, orientation)
+        second_parent_adjecent_index = self.second_parent.get_adjecent_piece(current_piece_index, orientation)
+
+        if first_parent_adjecent_index in self.available_pieces:
+            if first_parent_adjecent_index == second_parent_adjecent_index:
+                return -2, first_parent_adjecent_index
+
+        # Best buddy in at least one parent
+        best_fit_index = self.mapping.get_best_fit(current_piece_index, orientation)[0]
+        if best_fit_index in self.available_pieces:
+            inverse_best_fit_index = self.mapping.get_best_fit(best_fit_index, self.get_inverse_orientation(orientation))[0]
+
+            if inverse_best_fit_index == current_piece_index:
+                if best_fit_index in (first_parent_adjecent_index, second_parent_adjecent_index):
+                    return -1, best_fit_index
+
+        # Best available fit
+        best_fits_list = self.mapping.get_best_fit(current_piece_index, orientation)
+        for candidate_index in best_fits_list:
+            if candidate_index in self.available_pieces:
+                return self.mapping.get_dissimilarity(current_piece_index, candidate_index, orientation), candidate_index
+
+    def get_inverse_orientation(self, orientation: str) -> str:
+        if orientation == 'R':
+            return 'L'
+        if orientation == 'L':
+            return 'R'
+        if orientation == 'D':
+            return 'U'
+        if orientation == 'U':
+            return 'D'
+        if orientation == 'F':
+            return 'B'
+        if orientation == 'B':
+            return 'F'
+
+    def is_in_boundary(self, position: Tuple[int, int, int]) -> bool:
+        x, y, z = position
+        if self.right_b - self.left_b >= self.width:
+            if x < self.right_b or x > self.right_b:
+                return False
+
+        if self.down_b - self.up_b >= self.height:
+            if y > self.down_b or y < self.up_b:
+                return False
+
+        if self.forward_b - self.back_b >= self.depth:
+            if z > self.forward_b or z < self.back_b:
+                return False
+
+        return True
+
+    def procreate(self) -> Puzzle:
+        new_pieces = np.empty((self.width, self.height, self.depth))
+        for pos, index in self.kernel.items():
+            x, y, z = pos
+            x = x - self.left_b
+            y = y - self.up_b
+            z = z - self.back_b
+            new_pieces[x, y, z] = index
+        return Puzzle(self.mapping, new_pieces)
