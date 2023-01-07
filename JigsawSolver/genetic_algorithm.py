@@ -55,7 +55,7 @@ class GeneticAlgorithm(object):
                 first_parent = indices[0]
                 second_parent = indices[1]
                 new_puzzle = Puzzle.cross(first_parent, second_parent)
-                new_population.appendn(new_puzzle)
+                new_population.append(new_puzzle)
 
             new_population_fitness_values = np.array([
                 puzzle.fitness for puzzle in new_population
