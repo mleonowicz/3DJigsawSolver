@@ -25,6 +25,7 @@ class IndexToDataMapping:
         self.width, self.height, self.depth = piece_size
         self.id_map = {}
         self.dissimilarity_cache = {}
+        self.best_fit_cache = {}
         for index in range(self.num_of_puzzles):
             self.id_map[index] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
 
@@ -115,6 +116,50 @@ class IndexToDataMapping:
             dissimilarity = calculate_dissimilarity(self[index_a], self[index_b], orientation)
             self.dissimilarity_cache[key] = dissimilarity
             return dissimilarity
+
+    def gest_best_fit(self, index: int, orientation: str) -> int:
+        """
+        Parameters
+        ----------
+        index : int
+            _description_
+        orientation : str
+            Valid arguments are 'L', 'R', 'U', 'D', 'F' and 'B'.
+
+        Returns
+        -------
+        int
+            _description_
+        """
+        key = (index, orientation)
+        try:
+            return self.best_fit_cache[key]
+        except KeyError:
+            argmin = 0
+            min = float('inf')
+            for other_index in range(self.num_of_puzzles):
+                if other_index == index:
+                    continue
+
+                if orientation == 'R':
+                    dissimilarity = self.get_dissimilarity(index, other_index, 'LR')
+                elif orientation == 'L':
+                    dissimilarity = self.get_dissimilarity(other_index, index, 'LR')
+                if orientation == 'D':
+                    dissimilarity = self.get_dissimilarity(index, other_index, 'UD')
+                elif orientation == 'U':
+                    dissimilarity = self.get_dissimilarity(other_index, index, 'UD')
+                if orientation == 'B':
+                    dissimilarity = self.get_dissimilarity(index, other_index, 'FB')
+                elif orientation == 'F':
+                    dissimilarity = self.get_dissimilarity(other_index, index, 'FB')
+
+                if dissimilarity < min:
+                    min = dissimilarity
+                    argmin = other_index
+            
+            self.best_fit_cache[key] = argmin
+            return self.best_fit_cache[key]
 
 
 class Puzzle:
