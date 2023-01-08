@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
-from JigsawSolver.video_utility import parse_video
+from JigsawSolver.video_utility import parse_video, save_puzzle_video
 
 
 class GeneticAlgorithm(object):
@@ -70,7 +70,4 @@ class GeneticAlgorithm(object):
 
             current_population = new_population
             current_population_fitness_values = new_population_fitness_values
-
-index_mapping, metadata = parse_video("example/example.mp4", 128, 72, 85)
-ga = GeneticAlgorithm(index_mapping, 10)
-ga.fit(5)
+        return best_fitness, best_puzzle

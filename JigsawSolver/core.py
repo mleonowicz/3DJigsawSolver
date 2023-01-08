@@ -1,6 +1,9 @@
 from itertools import product
 from typing import Tuple, Optional, List
 import heapq
+from tqdm import tqdm
+from icecream import ic
+import itertools
 
 import numpy as np
 
@@ -83,7 +86,7 @@ class IndexToDataMapping:
             index = self.coords_to_index((xcoord, ycoord, zcoord))
             puzzle_data = self.id_map[index]
             puzzle_data[:, :, data_z_ind] = frame[self.height * ycoord: self.height * (ycoord + 1),
-                                                  self.width * xcoord: self.width * (xcoord + 1)]
+                                                self.width * xcoord: self.width * (xcoord + 1)]
 
     def __getitem__(self, index):
         return self.id_map[index]
@@ -154,9 +157,9 @@ class IndexToDataMapping:
                 elif orientation == 'F':
                     dissimilarity = self.get_dissimilarity(other_index, index, 'FB')
 
-                self.best_fit_cache[key].append(dissimilarity)
+                self.best_fit_cache[key].append((other_index, dissimilarity))
 
-            sorted(self.best_fit_cache[key])
+            sorted(self.best_fit_cache[key], key=lambda t: t[1])
             return self.best_fit_cache[key]
 
 
@@ -267,21 +270,23 @@ class CrossOperator(object):
         self.piece_candidates = []
 
     def __call__(self):
-        start_piece_id = np.random.choice(self.num_of_puzzles, 1)
+        start_piece_id = np.random.choice(self.num_of_puzzles, 1)[0]
         start_piece_position = (0, 0, 0)
 
         self.available_pieces = set(range(self.num_of_puzzles))
         self.add_to_kernel(start_piece_id, start_piece_position)
 
-        while self.kernel.len() != self.num_of_puzzles:
+        # with tqdm(total=self.num_of_puzzles) as pbar:
+        while len(self.kernel) != self.num_of_puzzles:
+
             _, (index, new_position, old_index, orientation) = heapq.heappop(self.piece_candidates)
 
-            if new_position in self.kernel:
+            if new_position in self.kernel or not self.is_in_boundary(new_position):
                 continue
             if index not in self.available_pieces:
                 priority, new_piece_index = self.get_new_piece_index(old_index, orientation)
                 if np.random.uniform() < self.mutation_probability:
-                    new_piece_index = np.random.choice(self.available_pieces)
+                    new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
 
                 heapq.heappush(
                     self.piece_candidates,
@@ -290,13 +295,25 @@ class CrossOperator(object):
                 continue
 
             self.add_to_kernel(index, new_position)
+                # pbar.update(1)
+
+        legal_positions = set()
+        # ic("Legal:")
+        # for x, y, z in itertools.product(range(self.left_b, self.right_b+1), range(self.up_b, self.down_b+1), range(self.back_b, self.forward_b+1
+        # )):
+            # ic(f"({x}, {y}, {z}): {self.kernel.get((x, y, z))}")
+            # legal_positions.add((x, y, z))
+        # illegal_positions = set(self.kernel.keys()) - legal_positions
+        # ic("\nIllegal:")
+        # for x, y, z in illegal_positions:
+            # ic(f"({x}, {y}, {z}): {self.kernel.get((x, y, z))}")
 
         return self.procreate()
 
     def add_to_kernel(self, current_piece_index: int, curr_piece_position: Tuple[int, int, int]):
         curr_x, curr_y, curr_z = curr_piece_position
         self.kernel[curr_piece_position] = current_piece_index
-        self.available_pieces -= set(current_piece_index)
+        self.available_pieces -= set([current_piece_index])
         self.left_b =    min(self.left_b,    curr_x)  # noqa: E222
         self.right_b =   max(self.right_b,   curr_x)  # noqa: E222
         self.up_b =      min(self.up_b,      curr_y)  # noqa: E222
@@ -324,7 +341,7 @@ class CrossOperator(object):
             priority, new_piece_index = self.get_new_piece_index(current_piece_index, orientation)
 
             if np.random.uniform() < self.mutation_probability:
-                new_piece_index = np.random.choice(self.available_pieces)
+                new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
 
             heapq.heappush(
                 self.piece_candidates,
@@ -341,9 +358,9 @@ class CrossOperator(object):
                 return -2, first_parent_adjecent_index
 
         # Best buddy in at least one parent
-        best_fit_index = self.mapping.get_best_fit(current_piece_index, orientation)[0]
+        best_fit_index, _ = self.mapping.get_best_fit(current_piece_index, orientation)[0]
         if best_fit_index in self.available_pieces:
-            inverse_best_fit_index = self.mapping.get_best_fit(best_fit_index, self.get_inverse_orientation(orientation))[0]
+            inverse_best_fit_index, _ = self.mapping.get_best_fit(best_fit_index, self.get_inverse_orientation(orientation))[0]
 
             if inverse_best_fit_index == current_piece_index:
                 if best_fit_index in (first_parent_adjecent_index, second_parent_adjecent_index):
@@ -351,9 +368,12 @@ class CrossOperator(object):
 
         # Best available fit
         best_fits_list = self.mapping.get_best_fit(current_piece_index, orientation)
-        for candidate_index in best_fits_list:
+        for candidate_index, candidate_score in best_fits_list:
             if candidate_index in self.available_pieces:
-                return self.mapping.get_dissimilarity(current_piece_index, candidate_index, orientation), candidate_index
+                return candidate_score, candidate_index
+
+        # Should not end up here
+        assert False
 
     def get_inverse_orientation(self, orientation: str) -> str:
         if orientation == 'R':
@@ -371,15 +391,15 @@ class CrossOperator(object):
 
     def is_in_boundary(self, position: Tuple[int, int, int]) -> bool:
         x, y, z = position
-        if self.right_b - self.left_b >= self.width:
-            if x < self.right_b or x > self.right_b:
+        if self.right_b - self.left_b >= self.width - 1:
+            if x < self.left_b or x > self.right_b:
                 return False
 
-        if self.down_b - self.up_b >= self.height:
+        if self.down_b - self.up_b >= self.height - 1:
             if y > self.down_b or y < self.up_b:
                 return False
 
-        if self.forward_b - self.back_b >= self.depth:
+        if self.forward_b - self.back_b >= self.depth - 1:
             if z > self.forward_b or z < self.back_b:
                 return False
 
