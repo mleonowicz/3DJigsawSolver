@@ -70,7 +70,6 @@ class GeneticAlgorithm(object):
                 p=probabilities
             ).reshape((-1, 2))
 
-            new_population = []
             for indices in parent_indices:
                 first_parent = current_population[indices[0]]
                 second_parent = current_population[indices[1]]
