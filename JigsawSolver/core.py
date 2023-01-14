@@ -2,7 +2,6 @@ from itertools import product
 from typing import Tuple, Optional, List
 import heapq
 from tqdm import tqdm
-from icecream import ic
 import itertools
 
 import numpy as np
