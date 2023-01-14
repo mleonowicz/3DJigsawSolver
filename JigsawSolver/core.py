@@ -159,7 +159,7 @@ class IndexToDataMapping:
 
                 self.best_fit_cache[key].append((other_index, dissimilarity))
 
-            sorted(self.best_fit_cache[key], key=lambda t: t[1])
+            self.best_fit_cache[key] = sorted(self.best_fit_cache[key], key=lambda t: t[1])
             return self.best_fit_cache[key]
 
 
@@ -297,7 +297,7 @@ class CrossOperator(object):
             self.add_to_kernel(index, new_position)
                 # pbar.update(1)
 
-        legal_positions = set()
+        # legal_positions = set()
         # ic("Legal:")
         # for x, y, z in itertools.product(range(self.left_b, self.right_b+1), range(self.up_b, self.down_b+1), range(self.back_b, self.forward_b+1
         # )):
