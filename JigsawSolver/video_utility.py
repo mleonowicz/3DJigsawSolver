@@ -29,7 +29,13 @@ class VideoMetadata:
     fourcc: str
 
 
-def parse_video(video_path: str, piece_width: int, piece_height: int, piece_depth: int):
+def parse_video(
+        video_path: str,
+        piece_width: int,
+        piece_height: int,
+        piece_depth: int,
+        strict_frame_number: bool = False
+):
     """
     Function parsing input video and creating the IndexToDataMapping instance.
 
@@ -40,6 +46,10 @@ def parse_video(video_path: str, piece_width: int, piece_height: int, piece_dept
     piece_width, piece_height, piece_depth
         Size of the puzzle piece in each dimension (width, height being the x, y dimension for each frame, depth being
         number of frames belonging to the piece)
+    strict_frame_number : bool
+        Default (False) strategy for when the piece_depth would not divide evenly is to drop the additional ending
+        frames. When True, if it's impossible to evenly divide the video into pieces with piece_depth dimension, and
+        exception is raised.
 
     Returns
     -------
@@ -62,10 +72,15 @@ def parse_video(video_path: str, piece_width: int, piece_height: int, piece_dept
     new_width = n_pieces_x * piece_width
     n_pieces_y = math.ceil(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) / piece_height)
     new_height = n_pieces_y * piece_height
-    n_pieces_z = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / piece_depth)
+    n_pieces_z = math.floor(cap.get(cv2.CAP_PROP_FRAME_COUNT) / piece_depth)
+    if n_pieces_z * piece_depth != metadata.frame_count:
+        if strict_frame_number:
+            raise RuntimeError(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}.")
+        print(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
+              f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames")
 
     index_to_data = IndexToDataMapping((n_pieces_x, n_pieces_y, n_pieces_z), (piece_width, piece_height, piece_depth))
-    for frame_ind in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
+    for frame_ind in range(n_pieces_z * piece_depth):
         ret, frame = cap.read()
         if not ret:
             break
