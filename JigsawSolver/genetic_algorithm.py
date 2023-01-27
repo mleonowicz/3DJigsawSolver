@@ -1,10 +1,10 @@
 import logging
+import joblib
 
 import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
-
 
 class GeneticAlgorithm(object):
     def __init__(
@@ -69,12 +69,19 @@ class GeneticAlgorithm(object):
                 p=probabilities
             ).reshape((-1, 2))
 
-            for indices in parent_indices:
-                first_parent = current_population[indices[0]]
-                second_parent = current_population[indices[1]]
+            def create_new_puzzle(first_parent, second_parent):
                 cross_operator = CrossOperator(first_parent, second_parent)
                 new_puzzle = cross_operator()
-                new_population.append(new_puzzle)
+                return new_puzzle
+
+            # Creating new offsprings
+            new_offsprings = joblib.Parallel(n_jobs=4)(
+                joblib.delayed(create_new_puzzle)
+                (current_population[indices[0]], current_population[indices[1]])
+                for indices in parent_indices
+            )
+
+            new_population = new_population + new_offsprings
 
             new_population_fitness_values = np.array([
                 puzzle.fitness for puzzle in new_population
@@ -95,3 +102,14 @@ class GeneticAlgorithm(object):
             current_population = new_population
             current_population_fitness_values = new_population_fitness_values
         return best_fitness, best_puzzle
+
+from icecream import ic
+index_mapping, metadata = parse_video("example/1280x720x85.mp4", 2, 2, 1)
+ga = GeneticAlgorithm(index_mapping, 50, 20)
+fit, puzzle = ga.fit(100, 20)
+save_puzzle_video(
+    "result.avi",
+    puzzle,
+    metadata
+)
+
