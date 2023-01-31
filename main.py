@@ -1,6 +1,5 @@
 import argparse
 
-from JigsawSolver.core import Puzzle
 from JigsawSolver.genetic_algorithm import GeneticAlgorithm
 from JigsawSolver.video_utility import parse_input, save_puzzle_video
 

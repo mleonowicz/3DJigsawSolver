@@ -1,4 +1,3 @@
-import itertools
 from dataclasses import dataclass
 from typing import Optional
 
@@ -124,7 +123,11 @@ def parse_input(
         print(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
               f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames")
 
-    index_to_data = IndexToDataMapping((n_pieces_x, n_pieces_y, n_pieces_z), (piece_width, piece_height, piece_depth))
+    index_to_data = IndexToDataMapping(
+        (n_pieces_x, n_pieces_y, n_pieces_z),
+        (piece_width, piece_height, piece_depth),
+        input_path
+    )
     for frame_ind in range(len(data)):
         frame = cv2.resize(data[frame_ind], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
         index_to_data.add_frame(frame, frame_ind)

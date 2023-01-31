@@ -1,10 +1,11 @@
 import logging
-import joblib
 
 import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
+from JigsawSolver.video_utility import parse_input, save_puzzle_video
+
 
 class GeneticAlgorithm(object):
     def __init__(
@@ -12,6 +13,8 @@ class GeneticAlgorithm(object):
             mapping: IndexToDataMapping,
             population_size: int,
             elites: int = None,
+            alpha = 0.005,
+            beta = 0.05,
             logging_level=logging.INFO):
         self.population_size = population_size
         if not elites:
@@ -19,6 +22,8 @@ class GeneticAlgorithm(object):
         else:
             self.elites = elites
         self.mapping = mapping
+        self.alpha = alpha
+        self.beta = beta
 
         logging.basicConfig()
         self.logger = logging.getLogger(__name__)
@@ -69,17 +74,18 @@ class GeneticAlgorithm(object):
                 p=probabilities
             ).reshape((-1, 2))
 
-            def create_new_puzzle(first_parent, second_parent):
-                cross_operator = CrossOperator(first_parent, second_parent)
-                new_puzzle = cross_operator()
-                return new_puzzle
-
             # Creating new offsprings
-            new_offsprings = joblib.Parallel(n_jobs=4)(
-                joblib.delayed(create_new_puzzle)
-                (current_population[indices[0]], current_population[indices[1]])
-                for indices in parent_indices
-            )
+            new_offsprings = []
+            for indices in parent_indices:
+                first_parent, second_parent = current_population[indices[0]], current_population[indices[1]]
+                cross_operator = CrossOperator(first_parent, second_parent, self.alpha)
+                new_puzzle = cross_operator()
+                if np.random.uniform() < self.beta:
+                    left, right = np.random.randint(low=1, high=(self.mapping.n_pieces_z - 1), size=2, )
+                    if left > right:
+                        left, right = right, left
+                    new_puzzle.puzzle[:,:,left:right+1] = new_puzzle.puzzle[:,:,right:left-1:-1]
+                new_offsprings.append(new_puzzle)
 
             new_population = new_population + new_offsprings
 
@@ -103,13 +109,14 @@ class GeneticAlgorithm(object):
             current_population_fitness_values = new_population_fitness_values
         return best_fitness, best_puzzle
 
-from icecream import ic
-index_mapping, metadata = parse_video("example/1280x720x85.mp4", 2, 2, 1)
-ga = GeneticAlgorithm(index_mapping, 50, 20)
-fit, puzzle = ga.fit(100, 20)
+
+index_mapping, metadata = parse_input("example/example.mp4", 10, 10, 1, 'video')
+ga = GeneticAlgorithm(index_mapping, 500, 25, 0.01, 0.05)
+fit, puzzle = ga.fit(100, 25)
+
 save_puzzle_video(
     "result.avi",
     puzzle,
     metadata
 )
-
+index_mapping.save_caches()

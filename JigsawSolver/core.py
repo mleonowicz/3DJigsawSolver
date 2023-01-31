@@ -1,6 +1,8 @@
 from itertools import product
 from typing import Tuple, Optional, List
 import heapq
+from pathlib import Path
+import pickle
 
 import numpy as np
 
@@ -10,7 +12,8 @@ from JigsawSolver.dissimilarity import calculate_dissimilarity
 class IndexToDataMapping:
     def __init__(self,
                  n_pieces: Tuple[int, int, int],
-                 piece_size: Tuple[int, int, int]):
+                 piece_size: Tuple[int, int, int],
+                 filename: str):
         """
         Mapping between the index of the piece and the video data.
 
@@ -20,15 +23,48 @@ class IndexToDataMapping:
             Number of pieces in a puzzle in each dimension
         piece_size : Tuple[int, int, int]
             Sizes of the pieces in each dimension
+        filename : str
+            Filename of the file that is being processed.
         """
         self.n_pieces_x, self.n_pieces_y, self.n_pieces_z = n_pieces
         self.num_of_puzzles = self.n_pieces_x * self.n_pieces_y * self.n_pieces_z
         self.width, self.height, self.depth = piece_size
+        self.filename = filename
+
+        if self.get_dissimilarity_cache_path().exists():
+            with open(self.get_dissimilarity_cache_path(), 'rb') as f:
+                self.dissimilarity_cache = pickle.load(f)
+        else:
+            self.dissimilarity_cache = {}
+
+        if self.get_dissimilarity_cache_path().exists():
+            with open(self.get_dissimilarity_cache_path(), 'rb') as f:
+                self.best_fit_cache = pickle.load(f)
+        else:
+            self.best_fit_cache = {}
+
         self.id_map = {}
-        self.dissimilarity_cache = {}
-        self.best_fit_cache = {}
         for index in range(self.num_of_puzzles):
             self.id_map[index] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
+
+    def get_dissimilarity_cache_path(self):
+        return Path(
+            f'{self.filename}_{str(self.n_pieces_x)}_{str(self.n_pieces_y)}_{str(self.n_pieces_z)}' +
+            '_dissimilarity.cache'
+        )
+
+    def get_best_fit_cache_path(self):
+        return Path(
+            f'{self.filename}_{str(self.n_pieces_x)}_{str(self.n_pieces_y)}_{str(self.n_pieces_z)}' +
+            '_best_fit.cache'
+        )
+
+    def save_caches(self):
+        with open(self.get_dissimilarity_cache_path(), 'wb+') as f:
+            pickle.dump(self.dissimilarity_cache, f)
+
+        with open(self.get_best_fit_cache_path(), 'wb+') as f:
+            pickle.dump(self.best_fit_cache, f)
 
     def coords_to_index(self, coords: Tuple[int, int, int]) -> int:
         """
@@ -349,8 +385,8 @@ class CrossOperator(object):
             inverse_best_fit_index, _ = self.mapping.get_best_fit(best_fit_index, self.get_inverse_orientation(orientation))[0]
 
             if inverse_best_fit_index == current_piece_index:
-                # if best_fit_index in (first_parent_adjecent_index, second_parent_adjecent_index):
-                return -1, best_fit_index
+                if best_fit_index in (first_parent_adjecent_index, second_parent_adjecent_index):
+                    return -1, best_fit_index
 
         # Best available fit
         best_fits_list = self.mapping.get_best_fit(current_piece_index, orientation)
