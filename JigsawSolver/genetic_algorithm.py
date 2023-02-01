@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
-from JigsawSolver.video_utility import parse_video, save_puzzle_video
 
 
 class GeneticAlgorithm(object):
