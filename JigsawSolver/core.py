@@ -1,8 +1,8 @@
 from itertools import product
 from typing import Tuple, Optional, List
 import heapq
-from tqdm import tqdm
-import itertools
+from pathlib import Path
+import pickle
 
 import numpy as np
 
@@ -12,7 +12,8 @@ from JigsawSolver.dissimilarity import calculate_dissimilarity
 class IndexToDataMapping:
     def __init__(self,
                  n_pieces: Tuple[int, int, int],
-                 piece_size: Tuple[int, int, int]):
+                 piece_size: Tuple[int, int, int],
+                 filename: str):
         """
         Mapping between the index of the piece and the video data.
 
@@ -22,15 +23,48 @@ class IndexToDataMapping:
             Number of pieces in a puzzle in each dimension
         piece_size : Tuple[int, int, int]
             Sizes of the pieces in each dimension
+        filename : str
+            Filename of the file that is being processed.
         """
         self.n_pieces_x, self.n_pieces_y, self.n_pieces_z = n_pieces
         self.num_of_puzzles = self.n_pieces_x * self.n_pieces_y * self.n_pieces_z
         self.width, self.height, self.depth = piece_size
+        self.filename = filename
+
+        if self.get_dissimilarity_cache_path().exists():
+            with open(self.get_dissimilarity_cache_path(), 'rb') as f:
+                self.dissimilarity_cache = pickle.load(f)
+        else:
+            self.dissimilarity_cache = {}
+
+        if self.get_dissimilarity_cache_path().exists():
+            with open(self.get_dissimilarity_cache_path(), 'rb') as f:
+                self.best_fit_cache = pickle.load(f)
+        else:
+            self.best_fit_cache = {}
+
         self.id_map = {}
-        self.dissimilarity_cache = {}
-        self.best_fit_cache = {}
         for index in range(self.num_of_puzzles):
             self.id_map[index] = np.empty((self.height, self.width, self.depth, 3), dtype=np.uint8)
+
+    def get_dissimilarity_cache_path(self):
+        return Path(
+            f'{self.filename}_{str(self.n_pieces_x)}_{str(self.n_pieces_y)}_{str(self.n_pieces_z)}' +
+            '_dissimilarity.cache'
+        )
+
+    def get_best_fit_cache_path(self):
+        return Path(
+            f'{self.filename}_{str(self.n_pieces_x)}_{str(self.n_pieces_y)}_{str(self.n_pieces_z)}' +
+            '_best_fit.cache'
+        )
+
+    def save_caches(self):
+        with open(self.get_dissimilarity_cache_path(), 'wb+') as f:
+            pickle.dump(self.dissimilarity_cache, f)
+
+        with open(self.get_best_fit_cache_path(), 'wb+') as f:
+            pickle.dump(self.best_fit_cache, f)
 
     def coords_to_index(self, coords: Tuple[int, int, int]) -> int:
         """
@@ -84,8 +118,10 @@ class IndexToDataMapping:
         for xcoord, ycoord in product(range(self.n_pieces_x), range(self.n_pieces_y)):
             index = self.coords_to_index((xcoord, ycoord, zcoord))
             puzzle_data = self.id_map[index]
-            puzzle_data[:, :, data_z_ind] = frame[self.height * ycoord: self.height * (ycoord + 1),
-                                                self.width * xcoord: self.width * (xcoord + 1)]
+            puzzle_data[:, :, data_z_ind] = frame[
+                self.height * ycoord: self.height * (ycoord + 1),
+                self.width * xcoord: self.width * (xcoord + 1)
+            ]
 
     def __getitem__(self, index):
         return self.id_map[index]
@@ -246,7 +282,7 @@ class Puzzle:
 
 
 class CrossOperator(object):
-    def __init__(self, first_parent: Puzzle, second_parent: Puzzle, mutation_probability=0.05):
+    def __init__(self, first_parent: Puzzle, second_parent: Puzzle, mutation_probability=0.01):
         self.first_parent = first_parent
         self.second_parent = second_parent
         self.mutation_probability = mutation_probability
@@ -275,17 +311,15 @@ class CrossOperator(object):
         self.available_pieces = set(range(self.num_of_puzzles))
         self.add_to_kernel(start_piece_id, start_piece_position)
 
-        # with tqdm(total=self.num_of_puzzles) as pbar:
         while len(self.kernel) != self.num_of_puzzles:
-
             _, (index, new_position, old_index, orientation) = heapq.heappop(self.piece_candidates)
 
             if new_position in self.kernel or not self.is_in_boundary(new_position):
                 continue
             if index not in self.available_pieces:
                 priority, new_piece_index = self.get_new_piece_index(old_index, orientation)
-                if np.random.uniform() < self.mutation_probability:
-                    new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
+                # if np.random.uniform() < self.mutation_probability:
+                #     new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
 
                 heapq.heappush(
                     self.piece_candidates,
@@ -294,18 +328,6 @@ class CrossOperator(object):
                 continue
 
             self.add_to_kernel(index, new_position)
-                # pbar.update(1)
-
-        # legal_positions = set()
-        # ic("Legal:")
-        # for x, y, z in itertools.product(range(self.left_b, self.right_b+1), range(self.up_b, self.down_b+1), range(self.back_b, self.forward_b+1
-        # )):
-            # ic(f"({x}, {y}, {z}): {self.kernel.get((x, y, z))}")
-            # legal_positions.add((x, y, z))
-        # illegal_positions = set(self.kernel.keys()) - legal_positions
-        # ic("\nIllegal:")
-        # for x, y, z in illegal_positions:
-            # ic(f"({x}, {y}, {z}): {self.kernel.get((x, y, z))}")
 
         return self.procreate()
 
@@ -337,10 +359,11 @@ class CrossOperator(object):
             if not self.is_in_boundary(new_position):
                 continue
 
-            priority, new_piece_index = self.get_new_piece_index(current_piece_index, orientation)
-
             if np.random.uniform() < self.mutation_probability:
                 new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
+                priority = 0
+            else:
+                priority, new_piece_index = self.get_new_piece_index(current_piece_index, orientation)
 
             heapq.heappush(
                 self.piece_candidates,

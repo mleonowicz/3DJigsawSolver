@@ -1,7 +1,8 @@
-import itertools
 from dataclasses import dataclass
+from typing import Optional
 
 import cv2
+import nibabel
 import numpy as np
 import math
 
@@ -20,45 +21,18 @@ def _get_fourcc(cap):
 @dataclass
 class VideoMetadata:
     """
-    Class used for storing the metadata of input video to restore it for output videos
+    Class used for storing the metadata of input video/image to restore it for output videos
     """
     width: int
     height: int
     fps: float
     frame_count: int
-    fourcc: str
+    fourcc: Optional[str] = None
 
 
-def parse_video(
-        video_path: str,
-        n_pieces_x: int,
-        n_pieces_y: int,
-        n_pieces_z: int,
-        strict_frame_number: bool = False
+def load_video(
+        video_path: str
 ):
-    """
-    Function parsing input video and creating the IndexToDataMapping instance.
-
-    Parameters
-    ----------
-    video_path : str
-        Path to the input video
-    n_pieces_x, n_pieces_y, n_pieces_z
-        Number of pieces in each dimension. If x
-        Size of the puzzle piece in each dimension (width, height being the x, y dimension for each frame, depth being
-        number of frames belonging to the piece)
-    strict_frame_number : bool
-        Default (False) strategy for when the piece_depth would not divide evenly is to drop the additional ending
-        frames. When True, if it's impossible to evenly divide the video into pieces with piece_depth dimension, and
-        exception is raised.
-
-    Returns
-    -------
-    IndexToDataMapping
-        Mapping later used to create a population of puzzle solutions
-    VideoMetadata
-        Metadata of the input video
-    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open a {video_path} video")
@@ -69,23 +43,93 @@ def parse_video(
         int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
         _get_fourcc(cap)
     )
-    piece_width = math.ceil(cap.get(cv2.CAP_PROP_FRAME_WIDTH) / n_pieces_x)
+    video_data = np.empty((metadata.frame_count, metadata.height, metadata.width, 3), dtype=float)
+    for frame_ind in range(metadata.frame_count):
+        ret, frame = cap.read()
+        if not ret:
+            video_data = video_data[:frame_ind]
+            break
+        video_data[frame_ind] = frame
+    return video_data, metadata
+
+
+def load_3d_image(
+        image_path: str
+):
+    image = nibabel.load(image_path)
+    image = image.get_fdata()
+    metadata = VideoMetadata(
+        image.shape[2],
+        image.shape[1],
+        25,
+        image.shape[0]
+    )
+    # Grayscale to RGB
+    if len(image.shape) == 3:
+        image = np.repeat(image[..., None], 3, -1)
+    if image.dtype != np.uint8:
+        image = image/image.max() * 255.
+        image = image.astype(np.uint8)
+    return image, metadata
+
+
+def parse_input(
+        input_path: str,
+        n_pieces_x: int,
+        n_pieces_y: int,
+        n_pieces_z: int,
+        input_type: str,
+        strict_frame_number: bool = False
+):
+    """
+    Function parsing input data and creating the IndexToDataMapping instance.
+
+    Parameters
+    ----------
+    input_path : str
+        Path to the input data
+    n_pieces_x, n_pieces_y, n_pieces_z
+        Number of pieces in each dimension. If x
+        Size of the puzzle piece in each dimension (width, height being the x, y dimension for each frame, depth being
+        number of frames belonging to the piece)
+    strict_frame_number : bool
+        Default (False) strategy for when the piece_depth would not divide evenly is to drop the additional ending
+        frames. When True, if it's impossible to evenly divide the video into pieces with piece_depth dimension, and
+        exception is raised.
+    input_type : str
+        One of "video" or "image" depending on if input is video or 3D image.
+
+    Returns
+    -------
+    IndexToDataMapping
+        Mapping later used to create a population of puzzle solutions
+    VideoMetadata
+        Metadata of the input video
+    """
+    if input_type == "video":
+        data, metadata = load_video(input_path)
+    elif input_type == "image":
+        data, metadata = load_3d_image(input_path)
+    else:
+        raise RuntimeError("Unrecognized input type.")
+    piece_width = math.ceil(metadata.width / n_pieces_x)
     new_width = n_pieces_x * piece_width
-    piece_height = math.ceil(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) / n_pieces_y)
+    piece_height = math.ceil(metadata.height / n_pieces_y)
     new_height = n_pieces_y * piece_height
-    piece_depth = math.floor(cap.get(cv2.CAP_PROP_FRAME_COUNT) / n_pieces_z)
+    piece_depth = math.floor(metadata.frame_count / n_pieces_z)
     if n_pieces_z * piece_depth != metadata.frame_count:
         if strict_frame_number:
             raise RuntimeError(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}.")
         print(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
               f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames")
 
-    index_to_data = IndexToDataMapping((n_pieces_x, n_pieces_y, n_pieces_z), (piece_width, piece_height, piece_depth))
-    for frame_ind in range(n_pieces_z * piece_depth):
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+    index_to_data = IndexToDataMapping(
+        (n_pieces_x, n_pieces_y, n_pieces_z),
+        (piece_width, piece_height, piece_depth),
+        input_path
+    )
+    for frame_ind in range(len(data)):
+        frame = cv2.resize(data[frame_ind], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
         index_to_data.add_frame(frame, frame_ind)
     return index_to_data, metadata
 

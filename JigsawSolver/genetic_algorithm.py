@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
-from JigsawSolver.video_utility import parse_video, save_puzzle_video
+from JigsawSolver.video_utility import parse_input, save_puzzle_video
 
 
 class GeneticAlgorithm(object):
@@ -13,6 +13,8 @@ class GeneticAlgorithm(object):
             mapping: IndexToDataMapping,
             population_size: int,
             elites: int = None,
+            alpha = 0.005,
+            beta = 0.05,
             logging_level=logging.INFO):
         self.population_size = population_size
         if not elites:
@@ -20,6 +22,8 @@ class GeneticAlgorithm(object):
         else:
             self.elites = elites
         self.mapping = mapping
+        self.alpha = alpha
+        self.beta = beta
 
         logging.basicConfig()
         self.logger = logging.getLogger(__name__)
@@ -70,12 +74,20 @@ class GeneticAlgorithm(object):
                 p=probabilities
             ).reshape((-1, 2))
 
+            # Creating new offsprings
+            new_offsprings = []
             for indices in parent_indices:
-                first_parent = current_population[indices[0]]
-                second_parent = current_population[indices[1]]
-                cross_operator = CrossOperator(first_parent, second_parent)
+                first_parent, second_parent = current_population[indices[0]], current_population[indices[1]]
+                cross_operator = CrossOperator(first_parent, second_parent, self.alpha)
                 new_puzzle = cross_operator()
-                new_population.append(new_puzzle)
+                if np.random.uniform() < self.beta:
+                    left, right = np.random.randint(low=1, high=(self.mapping.n_pieces_z - 1), size=2, )
+                    if left > right:
+                        left, right = right, left
+                    new_puzzle.puzzle[:,:,left:right+1] = new_puzzle.puzzle[:,:,right:left-1:-1]
+                new_offsprings.append(new_puzzle)
+
+            new_population = new_population + new_offsprings
 
             new_population_fitness_values = np.array([
                 puzzle.fitness for puzzle in new_population
@@ -96,3 +108,15 @@ class GeneticAlgorithm(object):
             current_population = new_population
             current_population_fitness_values = new_population_fitness_values
         return best_fitness, best_puzzle
+
+
+index_mapping, metadata = parse_input("example/example.mp4", 10, 10, 1, 'video')
+ga = GeneticAlgorithm(index_mapping, 500, 25, 0.01, 0.05)
+fit, puzzle = ga.fit(100, 25)
+
+save_puzzle_video(
+    "result.avi",
+    puzzle,
+    metadata
+)
+index_mapping.save_caches()

@@ -1,8 +1,7 @@
 import argparse
 
-from JigsawSolver.core import Puzzle
 from JigsawSolver.genetic_algorithm import GeneticAlgorithm
-from JigsawSolver.video_utility import parse_video, save_puzzle_video
+from JigsawSolver.video_utility import parse_input, save_puzzle_video
 
 
 def main():
@@ -29,13 +28,19 @@ def main():
         type=int,
         default=10
     )
+    parser.add_argument(
+        '--input-type',
+        choices=['video', 'image'],
+        default='video'
+    )
 
     args = parser.parse_args()
-    index_mapping, metadata = parse_video(
+    index_mapping, metadata = parse_input(
         args.video_path,
         args.pieces_number_x,
         args.pieces_number_y,
-        args.pieces_number_z
+        args.pieces_number_z,
+        args.input_type
     )  # noqa: F841
     ga = GeneticAlgorithm(index_mapping, 100, 20)
     _, p = ga.fit(100)
@@ -44,7 +49,6 @@ def main():
         p,
         metadata
     )
-
 
 if __name__ == '__main__':
     main()
