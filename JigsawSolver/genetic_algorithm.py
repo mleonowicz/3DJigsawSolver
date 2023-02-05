@@ -12,9 +12,9 @@ class GeneticAlgorithm(object):
             self,
             mapping: IndexToDataMapping,
             population_size: int,
-            elites: int=None,
-            alpha=0.005,
-            beta=0.05,
+            elites: int = None,
+            alpha: float = 0.005,
+            beta: float = 0.05,
             logging_level=logging.INFO,
             output_path='output.dat'):
         self.population_size = population_size
@@ -115,7 +115,7 @@ class GeneticAlgorithm(object):
                     left, right = np.random.randint(low=1, high=(self.mapping.n_pieces_z - 1), size=2, )
                     if left > right:
                         left, right = right, left
-                    new_puzzle.puzzle[:,:,left:right+1] = new_puzzle.puzzle[:,:,right:left-1:-1]
+                    new_puzzle.puzzle[:, :, left:right+1] = new_puzzle.puzzle[:, :, right:left-1:-1]
                 new_offsprings.append(new_puzzle)
 
             new_population = new_population + new_offsprings
