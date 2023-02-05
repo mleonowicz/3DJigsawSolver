@@ -11,7 +11,7 @@ def main():
     parser.add_argument(
         '--video-path',
         type=str,
-        default='example/example.mp4',
+        default='example/example-2.mp4',
     )
     parser.add_argument(
         '--pieces-number-x',
@@ -40,7 +40,7 @@ def main():
     )
     parser.add_argument(
         '--beta',
-        default=0.09,
+        default=0.05,
         type=float
     )
     parser.add_argument(

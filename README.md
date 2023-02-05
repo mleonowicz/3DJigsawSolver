@@ -78,7 +78,7 @@ TODO: wstawić oryginalne video, scans
 
 Each experiment was run wil following parameters:
 * Population number: 500
-* Number of puzzles: 3375 ($15 \times 15 \times 15$ puzzles in each dimension)
+* Number of puzzles: 3375 - $15 \times 15 \times 15$ puzzles in each dimension
 * Number of elites: 15
 * $\alpha$: 0.003
 * $\beta$: 0.05
