@@ -5,7 +5,6 @@ import numpy as np
 from tqdm import trange
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
-from JigsawSolver.video_utility import parse_input, save_puzzle_video
 
 
 class GeneticAlgorithm(object):
@@ -13,9 +12,9 @@ class GeneticAlgorithm(object):
             self,
             mapping: IndexToDataMapping,
             population_size: int,
-            elites: int = None,
-            alpha = 0.005,
-            beta = 0.05,
+            elites: int=None,
+            alpha=0.005,
+            beta=0.05,
             logging_level=logging.INFO,
             output_path='output.dat'):
         self.population_size = population_size
@@ -26,7 +25,7 @@ class GeneticAlgorithm(object):
         self.mapping = mapping
         self.alpha = alpha
         self.beta = beta
-        self.output_path = f'output_path_{time.time()}'
+        self.output_path = f'{output_path}_{time.time()}'
 
         self.min_fitness_history = []
         self.mean_fitness_history = []
@@ -57,7 +56,7 @@ class GeneticAlgorithm(object):
         plt.legend(loc="upper right")
         plt.savefig(f'{self.output_path}.history.png', bbox_inches='tight')
 
-    def fit(self, max_iter: int, max_no_change_iter: int = 5):
+    def fit(self, max_iter: int, max_no_change_iter: int = 20):
         self.logger.info('Started fit function')
 
         original_puzzle = Puzzle(

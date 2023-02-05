@@ -16,22 +16,52 @@ def main():
     parser.add_argument(
         '--pieces-number-x',
         type=int,
-        default=10
+        default=4
     )
     parser.add_argument(
         '--pieces-number-y',
         type=int,
-        default=10
+        default=4
     )
     parser.add_argument(
         '--pieces-number-z',
         type=int,
-        default=10
+        default=4
     )
     parser.add_argument(
         '--input-type',
         choices=['video', 'image'],
         default='video'
+    )
+    parser.add_argument(
+        '--alpha',
+        default=0.003,
+        type=float
+    )
+    parser.add_argument(
+        '--beta',
+        default=0.09,
+        type=float
+    )
+    parser.add_argument(
+        '--elites',
+        default=15,
+        type=int
+    )
+    parser.add_argument(
+        '--population-size',
+        default=500,
+        type=int
+    )
+    parser.add_argument(
+        '--max-iterations',
+        default=100,
+        type=int
+    )
+    parser.add_argument(
+        '--output-path',
+        default='output.dat',
+        type=str
     )
 
     args = parser.parse_args()
@@ -41,11 +71,18 @@ def main():
         args.pieces_number_y,
         args.pieces_number_z,
         args.input_type
-    )  # noqa: F841
-    ga = GeneticAlgorithm(index_mapping, 100, 20)
-    _, p = ga.fit(100)
+    )
+    ga = GeneticAlgorithm(
+        index_mapping,
+        population_size=args.population_size,
+        elites=args.elites,
+        alpha=args.alpha,
+        beta=args.beta,
+        output_path=args.output_path
+    )
+    _, p = ga.fit(args.max_iterations)
     save_puzzle_video(
-        "build/result.avi",
+        'result.avi',
         p,
         metadata
     )
