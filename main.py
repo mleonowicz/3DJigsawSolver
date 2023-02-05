@@ -16,17 +16,17 @@ def main():
     parser.add_argument(
         '--pieces-number-x',
         type=int,
-        default=4
+        default=15
     )
     parser.add_argument(
         '--pieces-number-y',
         type=int,
-        default=4
+        default=15
     )
     parser.add_argument(
         '--pieces-number-z',
         type=int,
-        default=4
+        default=15
     )
     parser.add_argument(
         '--input-type',
