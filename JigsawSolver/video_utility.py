@@ -122,6 +122,7 @@ def parse_input(
             raise RuntimeError(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}.")
         print(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
               f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames")
+        data = data[:n_pieces_z * piece_depth]
 
     index_to_data = IndexToDataMapping(
         (n_pieces_x, n_pieces_y, n_pieces_z),
