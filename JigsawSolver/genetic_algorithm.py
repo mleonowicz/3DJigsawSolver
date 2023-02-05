@@ -112,10 +112,10 @@ class GeneticAlgorithm(object):
                 cross_operator = CrossOperator(first_parent, second_parent, self.alpha)
                 new_puzzle = cross_operator()
                 if np.random.uniform() < self.beta and self.mapping.n_pieces_z > 1:
-                    left, right = np.random.randint(low=1, high=(self.mapping.n_pieces_z - 1), size=2, )
+                    left, right = np.random.randint(low=0, high=self.mapping.n_pieces_z + 1, size=2)
                     if left > right:
                         left, right = right, left
-                    new_puzzle.puzzle[:, :, left:right+1] = new_puzzle.puzzle[:, :, right:left-1:-1]
+                    new_puzzle.puzzle[:, :, left:right] = new_puzzle.puzzle[:, :, left:right][:, :, ::-1]
                 new_offsprings.append(new_puzzle)
 
             new_population = new_population + new_offsprings

@@ -86,6 +86,7 @@ def main():
         p,
         metadata
     )
+    index_mapping.save_caches()
 
 
 if __name__ == '__main__':
