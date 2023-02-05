@@ -1,5 +1,6 @@
 import logging
-
+import matplotlib.pyplot as plt
+import time
 import numpy as np
 from tqdm import trange
 
@@ -15,7 +16,8 @@ class GeneticAlgorithm(object):
             elites: int = None,
             alpha = 0.005,
             beta = 0.05,
-            logging_level=logging.INFO):
+            logging_level=logging.INFO,
+            output_path='output.dat'):
         self.population_size = population_size
         if not elites:
             self.elites = self.population_size // 2
@@ -24,10 +26,36 @@ class GeneticAlgorithm(object):
         self.mapping = mapping
         self.alpha = alpha
         self.beta = beta
+        self.output_path = f'output_path_{time.time()}'
+
+        self.min_fitness_history = []
+        self.mean_fitness_history = []
+        self.max_fitness_history = []
 
         logging.basicConfig()
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging_level)
+
+    def save_history(self):
+        with open(f'{self.output_path}.min', 'w+') as f:
+            f.write(', '.join(map(str, self.min_fitness_history)))
+
+        with open(f'{self.output_path}.mean', 'w+') as f:
+            f.write(', '.join(map(str, self.mean_fitness_history)))
+
+        with open(f'{self.output_path}.max', 'w+') as f:
+            f.write(', '.join(map(str, self.max_fitness_history)))
+
+    def draw_history(self):
+        xs = list(range(0, len(self.min_fitness_history)))
+        plt.plot(xs, self.min_fitness_history, marker='o', label='Min fitness')
+        plt.plot(xs, self.mean_fitness_history, marker='o', label='Mean fitness')
+        plt.plot(xs, self.max_fitness_history, marker='o', label='Max fitness')
+        plt.title('Fitness values')
+        plt.ylabel('Fitness')
+        plt.xlabel('Iteration')
+        plt.legend(loc="upper right")
+        plt.savefig(f'{self.output_path}.history.png', bbox_inches='tight')
 
     def fit(self, max_iter: int, max_no_change_iter: int = 5):
         self.logger.info('Started fit function')
@@ -54,6 +82,10 @@ class GeneticAlgorithm(object):
         best_fitness = float('inf')
         best_puzzle = None
         no_change_counter = 0
+
+        self.min_fitness_history = [current_population_fitness_values.min()]
+        self.mean_fitness_history = [current_population_fitness_values.mean()]
+        self.max_fitness_history = [current_population_fitness_values.max()]
         for t in trange(max_iter):
             self.logger.info(f'Iteration: {t}. Best fitness: {best_fitness}')
 
@@ -80,7 +112,7 @@ class GeneticAlgorithm(object):
                 first_parent, second_parent = current_population[indices[0]], current_population[indices[1]]
                 cross_operator = CrossOperator(first_parent, second_parent, self.alpha)
                 new_puzzle = cross_operator()
-                if np.random.uniform() < self.beta:
+                if np.random.uniform() < self.beta and self.mapping.n_pieces_z > 1:
                     left, right = np.random.randint(low=1, high=(self.mapping.n_pieces_z - 1), size=2, )
                     if left > right:
                         left, right = right, left
@@ -93,6 +125,10 @@ class GeneticAlgorithm(object):
                 puzzle.fitness for puzzle in new_population
             ])
 
+            self.min_fitness_history.append(new_population_fitness_values.min())
+            self.mean_fitness_history.append(new_population_fitness_values.mean())
+            self.max_fitness_history.append(new_population_fitness_values.max())
+
             if new_population_fitness_values.min() < best_fitness:
                 best_fitness = new_population_fitness_values.min()
                 best_puzzle = new_population[new_population_fitness_values.argmin()]  # noqa: F841
@@ -103,20 +139,13 @@ class GeneticAlgorithm(object):
 
             if no_change_counter >= max_no_change_iter:
                 self.logger.info(f'No change for {no_change_counter} iterations. Ending prematurely.')
+                self.save_history()
+                self.draw_history()
                 return best_fitness, best_puzzle
 
             current_population = new_population
             current_population_fitness_values = new_population_fitness_values
+
+        self.save_history()
+        self.draw_history()
         return best_fitness, best_puzzle
-
-
-index_mapping, metadata = parse_input("example/example.mp4", 10, 10, 1, 'video')
-ga = GeneticAlgorithm(index_mapping, 500, 25, 0.01, 0.05)
-fit, puzzle = ga.fit(100, 25)
-
-save_puzzle_video(
-    "result.avi",
-    puzzle,
-    metadata
-)
-index_mapping.save_caches()
