@@ -93,21 +93,37 @@ Results for each image:
 
 ![Kot](./results/kot_film.mp4)
 ![Kot diagrams](./results/kot_graphs.png)
+To run this example use:
+```
+python3 main.py --video-path example/example.mp4
+```
 
 ### Video no. 2
 
 ![Papież](./results/papiez_film.mp4)
 ![Papież diagrams](./results/papiez_graphs.png)
+To run this example use:
+```
+python3 main.py --video-path example/example2.mp4
+```
 
 ### 3D Image no. 1
 
 ![scan_1](./results/scan_1_film.mp4)
 ![scan_1 diagrams](./results/scan_1_graphs.png)
+To run this example use:
+```
+python3 main.py --video-path example/scan-1.avi
+```
 
 ### 3D Image no. 2
 
 ![Scan_2](./results/scan_2_film.mp4)
 ![Scan_2 diagrams](./results/scan_2_graphs.png)
+To run this example use:
+```
+python3 main.py --video-path example/scan-2.avi
+```
 
 ### 3D Image no. 3
 
@@ -161,7 +177,6 @@ Those metrics would be used to calculate how good is the final best individual c
 * Create new fitness function.
 As seen in the examples dissimilarity is not an optimal choice for this problem.
 For some puzzles it is possible to find an individual that has better fitness score than the best solution.
-
 
 ## Sources:
 
