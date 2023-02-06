@@ -91,7 +91,7 @@ Results for each image:
 
 ### Video no. 1
 
-![Kot](./results/kot_film.mp4)
+![Kot](./results/kot.gif)
 ![Kot diagrams](./results/kot_graphs.png)
 To run this example use:
 ```
@@ -100,7 +100,7 @@ python3 main.py --video-path example/example.mp4
 
 ### Video no. 2
 
-![Papież](./results/papiez_film.mp4)
+![Papież](./results/papiez.gif)
 ![Papież diagrams](./results/papiez_graphs.png)
 To run this example use:
 ```
@@ -109,7 +109,7 @@ python3 main.py --video-path example/example2.mp4
 
 ### 3D Image no. 1
 
-![scan_1](./results/scan_1_film.mp4)
+![scan_1](./results/scan_1.gif)
 ![scan_1 diagrams](./results/scan_1_graphs.png)
 To run this example use:
 ```
@@ -118,7 +118,7 @@ python3 main.py --video-path example/scan-1.avi
 
 ### 3D Image no. 2
 
-![Scan_2](./results/scan_2_film.mp4)
+![Scan_2](./results/scan_2.gif)
 ![Scan_2 diagrams](./results/scan_2_graphs.png)
 To run this example use:
 ```
