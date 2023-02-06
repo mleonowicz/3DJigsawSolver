@@ -84,9 +84,36 @@ Each experiment was run wil following parameters:
 * $\beta$: 0.05
 * Maximum number of generations: 100
 
-Results for each 
+Results for each image:
+
+### Video no. 1
+
+![Kot](./results/kot_film.mp4)
+![Kot diagrams](./results/kot_graphs.png)
+
+### Video no. 2
+
+![]()
+![]()
+
+### 3D Image no. 1
+
+![]()
+![]()
+
+### 3D Image no. 2
+
+![]()
+![]()
+
+### 3D Image no. 3
+
+![]()
+![]()
 
 ### Ablation study
+
+
 
 ## Further Work
 
