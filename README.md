@@ -60,21 +60,24 @@ Crossover operator definition:
 
 Pieces $P_1$ and $P_2$ are best-buddy pieces if for one of $P_1$'s borders $P_2$ has the smallest dissimilarity, and for corresponding border of $P_2$ the best fit is $P_1$.
 
-TODO: Add visualization video 
+![Visualization of the crossover operator](./visualization/crossover_visualization.mp4)
+In the visualization video the bottom two puzzles represent the parents that are picked to create a new offspring.
+The upper puzzle is the new offspring.
+New pieces are added iteratively.
+Green color means that both of the parents agreed on that piece.
+Blue color means that best-buddy puzzle was picked.
 
 ### Mutation
 
-We introduce two types of mutation:
+We introduce two types of mutations:
 * In crossover operator when calculating the best-fit puzzle a randomly chosen puzzle from the available pieces is picked and added to the kernel instead with probability $\alpha$.
 
-* After the crossover operator with probability $\beta$ we will perform mutation by reversing the order of the puzzle placement in the third dimension (depth). Lets consider layers of puzzle pieces, placed along the third dimension. Two indices are picked $0 \leq i \leq j \leq Z$ and then puzzles layers between the $i$ and $j$ are inversed.
+* After the crossover operator with probability $\beta$ we perform mutation by reversing the order of the puzzle placement in the third dimension (depth). Lets consider layers of puzzle pieces, placed along the third dimension. Two indices are picked $0 \leq i \leq j \leq Z$ and then puzzles layers between the $i$ and $j$ are inversed.
 For example if $i = 2$ and $j = 5$ then pieces of depth $2$ swap with pieces of depth $5$ and pieces with depth $3$ swap with pieces of depth $4$.
 
 ## Results
 
-We have tested the image on two videos and three 3D images of medical scans.
-
-TODO: wstawić oryginalne video, scans
+We have tested the image on two youtube videos and three 3D images of medical scans.
 
 Each experiment was run wil following parameters:
 * Population number: 500
@@ -93,28 +96,77 @@ Results for each image:
 
 ### Video no. 2
 
-![]()
-![]()
+![Papież](./results/papiez_film.mp4)
+![Papież diagrams](./results/papiez_graphs.png)
 
 ### 3D Image no. 1
 
-![]()
-![]()
+![scan_1](./results/scan_1_film.mp4)
+![scan_1 diagrams](./results/scan_1_graphs.png)
 
 ### 3D Image no. 2
 
-![]()
-![]()
+![Scan_2](./results/scan_2_film.mp4)
+![Scan_2 diagrams](./results/scan_2_graphs.png)
 
 ### 3D Image no. 3
 
+TODO:
 ![]()
 ![]()
 
 ### Ablation study
 
+As we can see from the results, the presented algorithm finds the best solution in a matter of couple of generations.
+Most notably, the crossover operation as it is defined right now is quite powerful, findind ... . We have performed the ablation study to analyze the power of this operation.
 
+At first we analyzed less sophisticated crossover operation that instead performs only two steps:
+* If both parents have the the same puzzle adjecent to the piece under consideration and this puzzle is in the available pieces it is used and added to the kernel.
+* Add add a random piece in that place to the kernel.
+
+The results can be seen here:
+
+Hyperparameters used:
+* Population number: 500
+* Number of puzzles: 3375 - $15 \times 15 \times 15$ puzzles in each dimension
+* Number of elites: 15
+* $\alpha$: 0.003
+* $\beta$: 0.05
+* Maximum number of generations: 100
+
+TODO: Add results
+
+As presented above, this model has not enough power to produce results that are satisfactory.
+The other thing that we have checked is whether the evolution mechanism adds anything to the algorithm at all.
+We have tried finding a solution for the same inputs, running the algorithm for a single generation, so that we are spanning the crossover across the entire population only once. Results of the experiment are as follows:
+
+Hyperparameters used:
+* Population number: 500
+* Number of puzzles: 3375 - $15 \times 15 \times 15$ puzzles in each dimension
+* Number of elites: 15
+* $\alpha$: 0.003
+* $\beta$: 0.05
+* Maximum number of generations: 100
+
+TODO: Add kot z diagramem dla jednej generacji
+
+TODO: Komentarz co wyszlo z pojedynczej generacji
 
 ## Further Work
 
-TODO: Lepsze metryki
+* As can be seen in the examples provided as the evolution goes on, at some point the mean of population fitness slighty rises. This is an unexpected behaviour, one that would require more thorough investigation.
+* We have seen a significant increase in puzzle solution accuracy after introducing $\beta$ parameter and related mutation procedure. One can experiment with such a mutiation to see what would work the best (for example - more general form, considering layers from all dimensions instead of only the depth of the puzzle).
+* Create new metrics so that the performance of the model can be measured more accurately.
+Those metrics would be used to calculate how good is the final best individual compared to the optimal solution.
+* Create new fitness function.
+As seen in the examples dissimilarity is not an optimal choice for this problem.
+For some puzzles it is possible to find an individual that has better fitness score than the best solution.
+
+
+## Sources:
+
+[Medical scans](https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=52757270&fbclid=IwAR23VNHe9kIEs3i6TyXnXsf71Vs62GgTChq-N9FUHOpu4mACfY6QltU7pZg)
+
+[World's smallest cat 🐈](https://www.youtube.com/watch?v=W86cTIoMv2U)
+
+[Pytania do Jana Pawła II](https://www.youtube.com/watch?v=3oKH38_q_Io)
