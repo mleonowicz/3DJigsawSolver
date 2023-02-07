@@ -26,7 +26,8 @@ We then follow the genetic algorithm of the form:
 * For each generation:
     * Evaluate the cureent population.
     * Pick $N_E$ elites that remain in the population
-    * Randomly choose with weights based on fitness two members of population and cross the to create a new member. Repeat that until the population is full.
+    * Randomly choose (with weights based on fitness values) two members of population and apply crossover operator on them to create a new offspring.
+    Repeat that until the population is full.
     * With $\beta$ probability perform mutation of the new member in a procedure described below.
 * Alogrithm returns puzzle solution with the best fitness score.
 
@@ -164,7 +165,10 @@ Hyperparameters used:
 * $\beta$: 0.05
 * Maximum number of generations: 100
 
-TODO: Add results
+![Scan_2](./results/kot_ablation_crossover.gif)
+
+![Scan_2 diagrams](./results/kot_ablation_crossover_graphs.png)
+
 
 As presented above, this model has not enough power to produce results that are satisfactory.
 The other thing that we have checked is whether the evolution mechanism adds anything to the algorithm at all.
