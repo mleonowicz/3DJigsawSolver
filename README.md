@@ -93,7 +93,9 @@ Results for each image:
 ### Video no. 1
 
 ![Kot](./results/kot.gif)
+
 ![Kot diagrams](./results/kot_graphs.png)
+
 To run this example use:
 ```
 python3 main.py --video-path example/example.mp4
@@ -102,7 +104,9 @@ python3 main.py --video-path example/example.mp4
 ### Video no. 2
 
 ![Papież](./results/papiez.gif)
+
 ![Papież diagrams](./results/papiez_graphs.png)
+
 To run this example use:
 ```
 python3 main.py --video-path example/example2.mp4
@@ -111,7 +115,9 @@ python3 main.py --video-path example/example2.mp4
 ### 3D Image no. 1
 
 ![scan_1](./results/scan_1.gif)
+
 ![scan_1 diagrams](./results/scan_1_graphs.png)
+
 To run this example use:
 ```
 python3 main.py --video-path example/scan-1.avi
@@ -120,7 +126,9 @@ python3 main.py --video-path example/scan-1.avi
 ### 3D Image no. 2
 
 ![Scan_2](./results/scan_2.gif)
+
 ![Scan_2 diagrams](./results/scan_2_graphs.png)
+
 To run this example use:
 ```
 python3 main.py --video-path example/scan-2.avi
@@ -129,7 +137,9 @@ python3 main.py --video-path example/scan-2.avi
 ### 3D Image no. 3
 
 ![Scan_2](./results/brain.gif)
+
 ![Scan_2 diagrams](./results/brain_graphs.png)
+
 To run this example use:
 ```
 python3 main.py --video-path example/brain_scan.nii.gz --input-type image
