@@ -127,9 +127,12 @@ python3 main.py --video-path example/scan-2.avi
 
 ### 3D Image no. 3
 
-TODO:
-![]()
-![]()
+![Scan_2](./results/brain.gif)
+![Scan_2 diagrams](./results/brain_graphs.png)
+To run this example use:
+```
+python3 main.py --video-path example/brain_scan.nii.gz --input-type image
+```
 
 ### Ablation study
 
