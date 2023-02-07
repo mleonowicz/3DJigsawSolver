@@ -26,13 +26,13 @@ We then follow the genetic algorithm of the form:
 * For each generation:
     * Evaluate the cureent population.
     * Pick $N_E$ elites that remain in the population
-    * We randomly choose with weights based on fitness two members of population and cross the to create a new member. We repeat that until the population is full.
-    * With $\beta$ probability we perform mutation of the new member in a procedure described below.
+    * Randomly choose with weights based on fitness two members of population and cross the to create a new member. Repeat that until the population is full.
+    * With $\beta$ probability perform mutation of the new member in a procedure described below.
 * Alogrithm returns puzzle solution with the best fitness score.
 
 ### Fitness
 
-Lets define the dissimilarity function between two puzzle pieces $x_i$ and $x_j$ ($x_i, x_j$ are of size $W \times H \times Z$). We compare them in the front-back direction, i. e. $x_j$ is the backward piece and $x_i$ is the frontal one.
+Lets define the dissimilarity function between two puzzle pieces $x_i$ and $x_j$, where $x_i, x_j$ are of size $W \times H \times Z$. We compare them in the front-back direction, i. e. $x_j$ is the backward piece and $x_i$ is the frontal one.
 
 $$D_Z(x_i, x_j, r) = \sqrt{\sum_{w=1}^W \sum_{h=1}^H \sum_{c=1}^3 (x_i(w, h, Z, c) - x_j(w, h, 1, c))^2}$$
 
@@ -60,7 +60,8 @@ Crossover operator definition:
 
 Pieces $P_1$ and $P_2$ are best-buddy pieces if for one of $P_1$'s borders $P_2$ has the smallest dissimilarity, and for corresponding border of $P_2$ the best fit is $P_1$.
 
-![Visualization of the crossover operator](./visualization/crossover_visualization.mp4)
+![Visualization of the crossover operator](./visualization/crossover_visualization.gif)
+
 In the visualization video the bottom two puzzles represent the parents that are picked to create a new offspring.
 The upper puzzle is the new offspring.
 New pieces are added iteratively.
