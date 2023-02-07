@@ -176,11 +176,13 @@ Hyperparameters used:
 * Number of elites: 15
 * $\alpha$: 0.003
 * $\beta$: 0.05
-* Maximum number of generations: 100
+* Maximum number of generations: 1
 
-TODO: Add kot z diagramem dla jednej generacji
+![Scan_2](./results/brain_one_iter.gif)
 
-TODO: Komentarz co wyszlo z pojedynczej generacji
+![Scan_2 diagrams](./results/brain_one_iter_graphs.png)
+
+As seen in the example, the results are better than a randomly generated puzzle, but still lack the general cohesion.
 
 ## Further Work
 
