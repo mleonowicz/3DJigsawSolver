@@ -166,19 +166,19 @@ class IndexToDataMapping:
             self.dissimilarity_cache[key] = dissimilarity
             return dissimilarity
 
-    def get_best_fit(self, index: int, orientation: str) -> List[int]:
+    def get_best_fit(self, index: int, orientation: str) -> List[tuple[int, float]]:
         """
         Parameters
         ----------
         index : int
-            _description_
+            Index of the puzzle
         orientation : str
             Valid arguments are 'L', 'R', 'U', 'D', 'F' and 'B'.
 
         Returns
         -------
-        int
-            _description_
+        List[tuple[int, float]]
+            List of tuples (index of the puzzle, dissimilarity) sorted in an ascending order
         """
         key = (index, orientation)
         try:
@@ -211,7 +211,9 @@ class IndexToDataMapping:
 
 
 class Puzzle:
-    def __init__(self, mapping: IndexToDataMapping, puzzle_pieces: np.ndarray = None):
+    def __init__(
+        self, mapping: IndexToDataMapping, puzzle_pieces: np.ndarray | None = None
+    ):
         """
         Representation of a single solution to the puzzle
 
@@ -223,7 +225,7 @@ class Puzzle:
             3D numpy array that with indices of puzzles
         """
         self.index_to_coord = {}
-        self._fitness = None
+        self._fitness: float | None = None
         self.index_to_data = mapping
         self.n_x, self.n_y, self.n_z = (
             mapping.n_pieces_x,
@@ -300,7 +302,8 @@ class Puzzle:
             if orientation == "B":
                 return self.puzzle[x, y, z - 1]
         except IndexError:
-            return None
+            pass
+        return None
 
 
 class CrossOperator(object):
@@ -325,8 +328,8 @@ class CrossOperator(object):
         self.forward_b = 0
         self.back_b = 0
 
-        self.kernel = {}
-        self.piece_candidates = []
+        self.kernel: dict[Tuple[int, int, int], int] = {}
+        self.piece_candidates: list = []
 
     def __call__(self):
         start_piece_id = np.random.choice(self.num_of_puzzles, 1)[0]
@@ -365,12 +368,12 @@ class CrossOperator(object):
         curr_x, curr_y, curr_z = curr_piece_position
         self.kernel[curr_piece_position] = current_piece_index
         self.available_pieces -= set([current_piece_index])
-        self.left_b = min(self.left_b, curr_x)  # noqa: E222
-        self.right_b = max(self.right_b, curr_x)  # noqa: E222
-        self.up_b = min(self.up_b, curr_y)  # noqa: E222
-        self.down_b = max(self.down_b, curr_y)  # noqa: E222
-        self.back_b = min(self.back_b, curr_z)  # noqa: E222
-        self.forward_b = max(self.forward_b, curr_z)  # noqa: E222
+        self.left_b = min(self.left_b, curr_x)
+        self.right_b = max(self.right_b, curr_x)
+        self.up_b = min(self.up_b, curr_y)
+        self.down_b = max(self.down_b, curr_y)
+        self.back_b = min(self.back_b, curr_z)
+        self.forward_b = max(self.forward_b, curr_z)
 
         adjecent_positions = {
             "R": (curr_x + 1, curr_y, curr_z),
@@ -391,7 +394,7 @@ class CrossOperator(object):
 
             if np.random.uniform() < self.mutation_probability:
                 new_piece_index = np.random.choice(list(self.available_pieces), 1)[0]
-                priority = 0
+                priority = 0.0
             else:
                 priority, new_piece_index = self.get_new_piece_index(
                     current_piece_index, orientation
@@ -407,7 +410,7 @@ class CrossOperator(object):
 
     def get_new_piece_index(
         self, current_piece_index: int, orientation: str
-    ) -> Tuple[int, int]:
+    ) -> Tuple[float | int, int]:
         # Same piece in both parents
         first_parent_adjecent_index = self.first_parent.get_adjecent_piece(
             current_piece_index, orientation
@@ -416,9 +419,13 @@ class CrossOperator(object):
             current_piece_index, orientation
         )
 
-        if first_parent_adjecent_index in self.available_pieces:
-            if first_parent_adjecent_index == second_parent_adjecent_index:
-                return -2, first_parent_adjecent_index
+        if (
+            first_parent_adjecent_index is not None
+            and second_parent_adjecent_index is not None
+        ):
+            if first_parent_adjecent_index in self.available_pieces:
+                if first_parent_adjecent_index == second_parent_adjecent_index:
+                    return -2, first_parent_adjecent_index
 
         # Best buddy in at least one parent
         best_fit_index, _ = self.mapping.get_best_fit(current_piece_index, orientation)[
@@ -458,6 +465,7 @@ class CrossOperator(object):
             return "B"
         if orientation == "B":
             return "F"
+        raise KeyError
 
     def is_in_boundary(self, position: Tuple[int, int, int]) -> bool:
         x, y, z = position

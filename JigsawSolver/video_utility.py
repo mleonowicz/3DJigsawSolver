@@ -9,11 +9,10 @@ import numpy as np
 from JigsawSolver.core import IndexToDataMapping, Puzzle
 
 
-def _get_fourcc(cap):
+def _get_fourcc(cap) -> str:
     fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
     # translating from byte representation to 4-character string
-    fourcc = bytes([(fourcc >> 8 * shift) & 255 for shift in range(4)]).decode()
-    return fourcc
+    return bytes([(fourcc >> 8 * shift) & 255 for shift in range(4)]).decode()
 
 
 @dataclass
@@ -26,10 +25,10 @@ class VideoMetadata:
     height: int
     fps: float
     frame_count: int
-    fourcc: Optional[str] = None
+    fourcc: str | None = None
 
 
-def load_video(video_path: str):
+def load_video(video_path: str) -> tuple[np.ndarray, VideoMetadata]:
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open a {video_path} video")
@@ -52,7 +51,7 @@ def load_video(video_path: str):
     return video_data, metadata
 
 
-def load_3d_image(image_path: str):
+def load_3d_image(image_path: str) -> tuple[np.ndarray, VideoMetadata]:
     image = nibabel.load(image_path)
     image = image.get_fdata()
     metadata = VideoMetadata(image.shape[2], image.shape[1], 25, image.shape[0])
@@ -72,7 +71,7 @@ def parse_input(
     n_pieces_z: int,
     input_type: str,
     strict_frame_number: bool = False,
-):
+) -> tuple[IndexToDataMapping, VideoMetadata]:
     """
     Function parsing input data and creating the IndexToDataMapping instance.
 
@@ -93,10 +92,9 @@ def parse_input(
 
     Returns
     -------
-    IndexToDataMapping
-        Mapping later used to create a population of puzzle solutions
-    VideoMetadata
-        Metadata of the input video
+    tuple[IndexToDataMapping, VideoMetadata]
+        Mapping later used to create a population of puzzle solutions and the
+        metadata of the input video.
     """
     if input_type == "video":
         data, metadata = load_video(input_path)
@@ -133,7 +131,9 @@ def parse_input(
     return index_to_data, metadata
 
 
-def save_puzzle_video(output_path: str, puzzle: Puzzle, metadata: VideoMetadata):
+def save_puzzle_video(
+    output_path: str, puzzle: Puzzle, metadata: VideoMetadata
+) -> None:
     """
     Takes the solution stored in puzzle and visualize it through the video
 

@@ -13,11 +13,11 @@ class GeneticAlgorithm(object):
         self,
         mapping: IndexToDataMapping,
         population_size: int,
-        elites: int = None,
+        elites: int | None = None,
         alpha: float = 0.005,
         beta: float = 0.05,
         logging_level=logging.INFO,
-        output_path="output.dat",
+        output_path: str = "output.dat",
     ):
         self.population_size = population_size
         if not elites:
@@ -29,9 +29,9 @@ class GeneticAlgorithm(object):
         self.beta = beta
         self.output_path = f"{output_path}_{time.time()}"
 
-        self.min_fitness_history = []
-        self.mean_fitness_history = []
-        self.max_fitness_history = []
+        self.min_fitness_history: list[float] = []
+        self.mean_fitness_history: list[float] = []
+        self.max_fitness_history: list[float] = []
 
         logging.basicConfig()
         self.logger = logging.getLogger(__name__)
@@ -149,9 +149,7 @@ class GeneticAlgorithm(object):
 
             if new_population_fitness_values.min() < best_fitness:
                 best_fitness = new_population_fitness_values.min()
-                best_puzzle = new_population[
-                    new_population_fitness_values.argmin()
-                ]  # noqa: F841
+                best_puzzle = new_population[new_population_fitness_values.argmin()]
                 self.logger.info(f"Found new best fitness value: {best_fitness}")
                 no_change_counter = 0
             else:

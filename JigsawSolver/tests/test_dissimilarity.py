@@ -5,7 +5,7 @@ from JigsawSolver.dissimilarity import calculate_dissimilarity
 
 
 @pytest.fixture
-def pieces():
+def pieces() -> tuple[np.ndarray, np.ndarray]:
     # frame_a 3x2x1
     #
     # 1,1,1   1,1,1
@@ -34,7 +34,7 @@ def pieces():
     return frame_a, frame_b
 
 
-def test_dissimilarity_function(pieces):
+def test_dissimilarity_function(pieces: tuple[np.ndarray, np.ndarray]):
     piece_a, piece_b = pieces
     assert calculate_dissimilarity(piece_a, piece_b, "LR") == np.sqrt(3)
     assert calculate_dissimilarity(piece_b, piece_a, "LR") == np.sqrt(6)
