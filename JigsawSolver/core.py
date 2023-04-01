@@ -1,8 +1,8 @@
-from itertools import product
-from typing import Tuple, Optional, List
 import heapq
-from pathlib import Path
 import pickle
+from itertools import product
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 import numpy as np
 

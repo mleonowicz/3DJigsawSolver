@@ -1,10 +1,10 @@
+import math
 from dataclasses import dataclass
 from typing import Optional
 
 import cv2
 import nibabel
 import numpy as np
-import math
 
 from JigsawSolver.core import IndexToDataMapping, Puzzle
 

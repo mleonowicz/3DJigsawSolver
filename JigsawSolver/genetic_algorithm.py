@@ -1,10 +1,11 @@
 import logging
-import matplotlib.pyplot as plt
 import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import trange
 
-from JigsawSolver.core import IndexToDataMapping, Puzzle, CrossOperator
+from JigsawSolver.core import CrossOperator, IndexToDataMapping, Puzzle
 
 
 class GeneticAlgorithm(object):
