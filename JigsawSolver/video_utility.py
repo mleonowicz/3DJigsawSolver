@@ -12,9 +12,7 @@ from JigsawSolver.core import IndexToDataMapping, Puzzle
 def _get_fourcc(cap):
     fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
     # translating from byte representation to 4-character string
-    fourcc = bytes([
-        (fourcc >> 8 * shift) & 255 for shift in range(4)
-    ]).decode()
+    fourcc = bytes([(fourcc >> 8 * shift) & 255 for shift in range(4)]).decode()
     return fourcc
 
 
@@ -23,6 +21,7 @@ class VideoMetadata:
     """
     Class used for storing the metadata of input video/image to restore it for output videos
     """
+
     width: int
     height: int
     fps: float
@@ -30,9 +29,7 @@ class VideoMetadata:
     fourcc: Optional[str] = None
 
 
-def load_video(
-        video_path: str
-):
+def load_video(video_path: str):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Could not open a {video_path} video")
@@ -41,9 +38,11 @@ def load_video(
         int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
         cap.get(cv2.CAP_PROP_FPS),
         int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
-        _get_fourcc(cap)
+        _get_fourcc(cap),
     )
-    video_data = np.empty((metadata.frame_count, metadata.height, metadata.width, 3), dtype=float)
+    video_data = np.empty(
+        (metadata.frame_count, metadata.height, metadata.width, 3), dtype=float
+    )
     for frame_ind in range(metadata.frame_count):
         ret, frame = cap.read()
         if not ret:
@@ -53,33 +52,26 @@ def load_video(
     return video_data, metadata
 
 
-def load_3d_image(
-        image_path: str
-):
+def load_3d_image(image_path: str):
     image = nibabel.load(image_path)
     image = image.get_fdata()
-    metadata = VideoMetadata(
-        image.shape[2],
-        image.shape[1],
-        25,
-        image.shape[0]
-    )
+    metadata = VideoMetadata(image.shape[2], image.shape[1], 25, image.shape[0])
     # Grayscale to RGB
     if len(image.shape) == 3:
         image = np.repeat(image[..., None], 3, -1)
     if image.dtype != np.uint8:
-        image = image/image.max() * 255.
+        image = image / image.max() * 255.0
         image = image.astype(np.uint8)
     return image, metadata
 
 
 def parse_input(
-        input_path: str,
-        n_pieces_x: int,
-        n_pieces_y: int,
-        n_pieces_z: int,
-        input_type: str,
-        strict_frame_number: bool = False
+    input_path: str,
+    n_pieces_x: int,
+    n_pieces_y: int,
+    n_pieces_z: int,
+    input_type: str,
+    strict_frame_number: bool = False,
 ):
     """
     Function parsing input data and creating the IndexToDataMapping instance.
@@ -119,27 +111,29 @@ def parse_input(
     piece_depth = math.floor(metadata.frame_count / n_pieces_z)
     if n_pieces_z * piece_depth != metadata.frame_count:
         if strict_frame_number:
-            raise RuntimeError(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}.")
-        print(f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
-              f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames")
-        data = data[:n_pieces_z * piece_depth]
+            raise RuntimeError(
+                f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}."
+            )
+        print(
+            f"Can't divide video with {metadata.frame_count} frames into pieces with depth {piece_depth}. "
+            f"Dropping {metadata.frame_count - n_pieces_z * piece_depth} frames"
+        )
+        data = data[: n_pieces_z * piece_depth]
 
     index_to_data = IndexToDataMapping(
         (n_pieces_x, n_pieces_y, n_pieces_z),
         (piece_width, piece_height, piece_depth),
-        input_path
+        input_path,
     )
     for frame_ind in range(len(data)):
-        frame = cv2.resize(data[frame_ind], (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+        frame = cv2.resize(
+            data[frame_ind], (new_width, new_height), interpolation=cv2.INTER_CUBIC
+        )
         index_to_data.add_frame(frame, frame_ind)
     return index_to_data, metadata
 
 
-def save_puzzle_video(
-        output_path: str,
-        puzzle: Puzzle,
-        metadata: VideoMetadata
-):
+def save_puzzle_video(output_path: str, puzzle: Puzzle, metadata: VideoMetadata):
     """
     Takes the solution stored in puzzle and visualize it through the video
 
@@ -153,7 +147,9 @@ def save_puzzle_video(
     """
     # fourcc = cv2.VideoWriter_fourcc(*metadata.fourcc)
     fourcc = cv2.VideoWriter_fourcc(*"DIVX")  # Tested locally only with .avi files
-    writer = cv2.VideoWriter(output_path, fourcc, metadata.fps, (metadata.width, metadata.height))
+    writer = cv2.VideoWriter(
+        output_path, fourcc, metadata.fps, (metadata.width, metadata.height)
+    )
     if not writer.isOpened():
         raise RuntimeError("Could not save the video")
 
@@ -166,16 +162,22 @@ def save_puzzle_video(
     puzzle_height = puzzle.index_to_data.height * puzzle.n_y
 
     # Should test if memory allows for bigger videos
-    output_video = np.empty((puzzle_height, puzzle_width, metadata.frame_count, 3), dtype=np.uint8)
+    output_video = np.empty(
+        (puzzle_height, puzzle_width, metadata.frame_count, 3), dtype=np.uint8
+    )
 
     for coords, index in np.ndenumerate(puzzle.puzzle):
         xcoord, ycoord, zcoord = coords
         output_video[
-            piece_height*ycoord: piece_height*(ycoord + 1),
-            piece_width*xcoord: piece_width*(xcoord + 1),
-            piece_depth*zcoord: piece_depth*(zcoord + 1)
+            piece_height * ycoord : piece_height * (ycoord + 1),
+            piece_width * xcoord : piece_width * (xcoord + 1),
+            piece_depth * zcoord : piece_depth * (zcoord + 1),
         ] = puzzle.index_to_data[index]
     for frame_ind in range(metadata.frame_count):
-        frame = cv2.resize(output_video[:, :, frame_ind], (metadata.width, metadata.height), interpolation=cv2.INTER_AREA)
+        frame = cv2.resize(
+            output_video[:, :, frame_ind],
+            (metadata.width, metadata.height),
+            interpolation=cv2.INTER_AREA,
+        )
         writer.write(frame)
     writer.release()
